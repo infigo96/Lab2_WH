@@ -24,7 +24,7 @@
 
 							/* the server uses a timer to periodically update the presentation window */
 							/* here is the timer id and timer period defined                          */
-
+#define GRAV	0.0000000000667259
 #define UPDATE_FREQ     10	/* update frequency (in ms) for the timer */
 
 							/* (the server uses a mailslot for incoming client requests) */
@@ -146,10 +146,35 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
   return 0;
 }
-void createPlanet(planet_type* head, char name[20], double mass, double posX, double posY, double velX, double velY, double life)
+void Planet(planet_type* pt)
+{
+	planet_type* tmp = pt->next;
+	double a = 0, ax = 0, ay = 0, r = 0;
+	while (pt->life != 0)
+	{
+		if (pt->next != NULL)
+		{
+			while (tmp != pt)
+			{
+				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
+				a = (GRAV*(tmp->mass)) / pow(r, 2);
+				ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
+				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
+				tmp = tmp->next;
+			}
+
+		}
+	}
+}
+void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, double life)
 {	
 		planet_type* tmp_new = malloc(sizeof(planet_type));
-		*tmp_new->name = name;
+		int i = 0; 
+		int len = strlen(name);
+		for (i = 0; i<= len ; i++)
+		{
+			tmp_new->name[i] = name[i];
+		}
 		tmp_new->mass = mass;
 		tmp_new->sx = posX;
 		tmp_new->sy = posY;
@@ -158,20 +183,20 @@ void createPlanet(planet_type* head, char name[20], double mass, double posX, do
 		tmp_new->life = life;
 		*tmp_new->pid = 0; //change later
 
-		if (head == NULL)
+		if (*head == NULL)
 		{
-			head = tmp_new;
-			head->next = NULL;
+			*head = tmp_new;
+			(*head)->next = NULL;
 		}
-		else if (head->next == NULL)
+		else if ((*head)->next == NULL)
 		{
-			tmp_new->next = head;
-			head->next = tmp_new;
+			tmp_new->next = *head;
+			(*head)->next = tmp_new;
 		}
-		else if (head->next != NULL)
+		else if ((*head)->next != NULL)
 		{
-			tmp_new->next = head->next;
-			head->next = tmp_new;
+			tmp_new->next = (*head)->next;
+			(*head)->next = tmp_new;
 		}
 		//threadCreate();
 	}
@@ -200,19 +225,28 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	HANDLE context;
 	static DWORD color = 0;
 	planet_type* pt = NULL;
-  
-	//For testing---------
 	char name[20] = "Excalibur";
 	double mass = 100000000;
-	double posX = 300;
-	double posY = 300;
+	double SX = 300;
+	double SY = 300;
 	double velX = 0;
 	double velY = 0;
 	double life = 100;
+	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
+	//For testing---------
+	char name2[20] = "Pluto";
+	mass = 1000;
+	SX = 200;
+	SY = 300;
+	velX = 0;
+	velY = 0.008;
+	life = 100;
+	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
+	Planet(pt->next);
 	//----------
 
 
-	createPlanet(pt, name, mass, posX, posY, velX, velY, life);
+	createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
 	switch( msg ) {
 							/**************************************************************/
 							/*    WM_CREATE:        (received on window creation)
