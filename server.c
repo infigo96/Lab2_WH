@@ -146,6 +146,36 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
   return 0;
 }
+void createPlanet(planet_type* head, char name[20], double mass, double posX, double posY, double velX, double velY, double life)
+{	
+		planet_type* tmp_new = malloc(sizeof(planet_type));
+		*tmp_new->name = name;
+		tmp_new->mass = mass;
+		tmp_new->sx = posX;
+		tmp_new->sy = posY;
+		tmp_new->vx = velX;
+		tmp_new->vy = velY;
+		tmp_new->life = life;
+		*tmp_new->pid = 0; //change later
+
+		if (head == NULL)
+		{
+			head = tmp_new;
+			head->next = NULL;
+		}
+		else if (head->next == NULL)
+		{
+			tmp_new->next = head;
+			head->next = tmp_new;
+		}
+		else if (head->next != NULL)
+		{
+			tmp_new->next = head->next;
+			head->next = tmp_new;
+		}
+		//threadCreate();
+	}
+
 
 
 /********************************************************************\
@@ -169,7 +199,20 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	int posY;
 	HANDLE context;
 	static DWORD color = 0;
+	planet_type* pt = NULL;
   
+	//For testing---------
+	char name[20] = "Excalibur";
+	double mass = 100000000;
+	double posX = 300;
+	double posY = 300;
+	double velX = 0;
+	double velY = 0;
+	double life = 100;
+	//----------
+
+
+	createPlanet(pt, name, mass, posX, posY, velX, velY, life);
 	switch( msg ) {
 							/**************************************************************/
 							/*    WM_CREATE:        (received on window creation)
