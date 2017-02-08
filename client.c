@@ -13,18 +13,19 @@
 #include <string.h>
 #include "wrapper.h"
 
-#define MESSAGE "Hello!"
+#define MESSAGE "Hello! Fucktard"
 
 void main(void) {
 
 	HANDLE mailSlot;
 	DWORD bytesWritten;
-	int loops = 2000;
-
+	int loops = 1;
+	Sleep(1000);
 	mailSlot = mailslotConnect("mailbox"); 
 
 	if (mailSlot == INVALID_HANDLE_VALUE) {
 		printf("Failed to get a handle to the mailslot!!\nHave you started the server?\n");
+		Sleep(20000);
 		return;
 	}
 
@@ -35,7 +36,7 @@ void main(void) {
 					/* Messages can be of different sizes as long as they don't exceed the       */
 					/* maximum message size that the mailslot can handle (defined upon creation).*/
     
-		bytesWritten = mailslotWrite (mailSlot, MESSAGE, strlen(MESSAGE));
+		bytesWritten = mailslotWrite (mailSlot, MESSAGE, strlen(MESSAGE)+1);
 		if (bytesWritten!=-1)
 			printf("data sent to server (bytes = %d)\n", bytesWritten);
 		else
@@ -46,6 +47,6 @@ void main(void) {
 
 					/* (sleep for a while, enables you to catch a glimpse of what the */
 					/*  client prints on the console)                                 */
-	Sleep(2000);
+	Sleep(20000);
 	return;
 }

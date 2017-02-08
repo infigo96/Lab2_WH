@@ -229,7 +229,8 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	int posY;
 	HANDLE context;
 	static DWORD color = 0;
-	planet_type* pt = NULL;
+	
+	/*planet_type* pt = NULL;
 	char name[20] = "Excalibur";
 	double mass = 100000000;
 	double SX = 300;
@@ -247,11 +248,11 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	velY = 0.008;
 	life = 100;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-	Planet(pt->next);
+	Planet(pt->next);*/
 	//----------
 
 
-	createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
+	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
 	switch( msg ) {
 							/**************************************************************/
 							/*    WM_CREATE:        (received on window creation)
