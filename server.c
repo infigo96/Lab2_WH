@@ -265,7 +265,6 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	//Planet(pt->next);
 	
 
-
 	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
 	switch( msg ) {
 							/**************************************************************/
