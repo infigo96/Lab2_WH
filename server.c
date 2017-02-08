@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "wrapper.h"
 
 							/* the server uses a timer to periodically update the presentation window */
@@ -149,8 +150,10 @@ DWORD WINAPI mailThread(LPVOID arg) {
 void Planet(planet_type* pt)
 {
 	planet_type* tmp = pt->next;
-	double a = 0, ax = 0, ay = 0, r = 0;
-	while (pt->life != 0)
+	double total_time, a = 0, ax = 0, ay = 0, r = 0;
+	clock_t time2, time = clock();
+	while (pt->life > 0)
+
 	{
 		if (pt->next != NULL)
 		{
@@ -162,7 +165,9 @@ void Planet(planet_type* pt)
 				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
 				tmp = tmp->next;
 			}
-
+			time2 = clock();
+			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
+			tmp->vx = tmp->vx + ax*total_time;
 		}
 	}
 }
