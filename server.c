@@ -167,11 +167,17 @@ void Planet(planet_type* pt)
 			}
 			time2 = clock();
 			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-			tmp->vx = tmp->vx + ax*total_time;
+			pt->vx = pt->vx + ax*10;
+			pt->vy = pt->vy + ay*10;
+			pt->sx = pt->sx + pt->vx*10;
+			pt->sy = pt->sy + pt->vy*10;
+			time = clock();
+			(pt->life)--;
+			Sleep(10);
 		}
 	}
 }
-void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, double life)
+void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life)
 {	
 		planet_type* tmp_new = malloc(sizeof(planet_type));
 		int i = 0; 
@@ -236,7 +242,7 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	double SY = 300;
 	double velX = 0;
 	double velY = 0;
-	double life = 100;
+	double life = 100000;
 	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
 	//For testing---------
 	char name2[20] = "Pluto";
@@ -245,7 +251,7 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	SY = 300;
 	velX = 0;
 	velY = 0.008;
-	life = 100;
+	life = 3000;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
 	Planet(pt->next);
 	//----------
