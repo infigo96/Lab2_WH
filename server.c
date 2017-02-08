@@ -152,9 +152,8 @@ void Planet(planet_type* pt)
 	planet_type* tmp = pt->next;
 	double total_time, a = 0, ax = 0, ay = 0, r = 0;
 	clock_t time2, time = clock();
-	while (pt->life > 0)
-
-	{
+	//while (pt->life > 0)
+	//{
 		if (pt->next != NULL)
 		{
 			while (tmp != pt)
@@ -173,9 +172,9 @@ void Planet(planet_type* pt)
 			pt->sy = pt->sy + pt->vy*10;
 			time = clock();
 			(pt->life)--;
-			Sleep(10);
+			Sleep(1);
 		}
-	}
+	//}
 }
 void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life)
 {	
@@ -236,28 +235,38 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 	HANDLE context;
 	static DWORD color = 0;
 	planet_type* pt = NULL;
-	char name[20] = "Excalibur";
-	double mass = 100000000;
+	planet_type* tmp;
+	char name[20] = "Mars";
+	double mass = 200000000;
 	double SX = 300;
 	double SY = 300;
-	double velX = 0;
+	double velX = -0.002;
 	double velY = 0;
-	double life = 100000;
+	double life = 30000;
 	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
-	//For testing---------
+	
 	char name2[20] = "Pluto";
 	mass = 1000;
-	SX = 200;
+	SX = 250;
 	SY = 300;
 	velX = 0;
 	velY = 0.008;
-	life = 3000;
+	life = 30000;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-	Planet(pt->next);
-	//----------
+
+	char name3[20] = "Venus";
+	mass = 10000;
+	SX = 400;
+	SY = 400;
+	velX = -0.003;
+	velY = -0.003;
+	life = 30000;
+	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
+	//Planet(pt->next);
+	
 
 
-	createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
+	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
 	switch( msg ) {
 							/**************************************************************/
 							/*    WM_CREATE:        (received on window creation)
@@ -275,13 +284,27 @@ LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam 
 							/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
 
 							/* here we draw a simple sinus curve in the window    */
-							/* just to show how pixels are drawn                  */
-			posX += 4;
-			posY = (int) (10 * sin(posX / (double) 30) + 20);
+			while (TRUE)
+			{
+				tmp = pt;
+				while (pt->next != NULL)
+				{
+					posX = pt->sx;
+					posY = pt->sy;
+					SetPixel(hDC, posX, posY, (COLORREF)color);
+					windowRefreshTimer(hWnd, UPDATE_FREQ);
+					Planet(pt);
+					pt = pt->next;
+				}
+				pt = tmp;
+			}
+			/*posX += 2;
+			posY = (int) (40 * sin(posX / (double) 30) + 20);
+			posY = posY + 50;
 			SetPixel(hDC, posX % 547, posY, (COLORREF) color);
 			color += 12;
 			windowRefreshTimer (hWnd, UPDATE_FREQ);
-			break;
+			break;*/
 							/****************************************************************\
 							*     WM_PAINT: (received when the window needs to be repainted, *
 							*               e.g. when maximizing the window)                 *
