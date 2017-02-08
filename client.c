@@ -13,35 +13,73 @@
 #include <string.h>
 #include "wrapper.h"
 
-#define MESSAGE "Hello! Fucktard"
+//#define MESSAGE "Hello! Fucktard"
+void input(char* msg)
+{
+	char dummy;
 
+	fgets(msg, 1024, stdin);
+
+	if (*(msg + (strlen(msg) - 1)) == '\n')		//if the last char is \n. Changes it to \0
+	{
+		*(msg + (strlen(msg) - 1)) = '\0';
+	}
+	else		//if the last char is not \n
+	{
+		do
+		{   // loop until the new-line is read to remove keyboard buffer
+			dummy = getchar();
+		} while (dummy != '\n');
+
+	}
+}
 void main(void) {
 
-	HANDLE mailSlot;
+	HANDLE mailSlot = INVALID_HANDLE_VALUE;
 	DWORD bytesWritten;
-	int loops = 1;
-	Sleep(1000);
-	mailSlot = mailslotConnect("mailbox"); 
+	int i = 0, length;
+	while (mailSlot == INVALID_HANDLE_VALUE)
+	{
+		Sleep(100);
+		mailSlot = mailslotConnect("mailbox");
 
-	if (mailSlot == INVALID_HANDLE_VALUE) {
-		printf("Failed to get a handle to the mailslot!!\nHave you started the server?\n");
-		Sleep(20000);
-		return;
+		if (mailSlot == INVALID_HANDLE_VALUE) {
+			printf("Failed to get a handle to the mailslot!!\nHave you started the server?\n");
+		}
 	}
+	planet_type* pt = malloc(sizeof(planet_type));
+	char* MESSAGE = malloc(1024);
+		do
+		{
+			printf("What is the planets name?\n");
+			input(MESSAGE);
+			length = strlen(MESSAGE);
+		} while (length > 20 || length <= 0);
+		while (i < length)
+		{
 
-						/* NOTE: replace code below for sending planet data to the server. */
-	while(loops-- > 0) {
-						/* send a friendly greeting to the server */
-					/* NOTE: The messages sent to the server need not to be of equal size.       */
-					/* Messages can be of different sizes as long as they don't exceed the       */
-					/* maximum message size that the mailslot can handle (defined upon creation).*/
-    
-		bytesWritten = mailslotWrite (mailSlot, MESSAGE, strlen(MESSAGE)+1);
-		if (bytesWritten!=-1)
+			pt->name[i] = MESSAGE[i];
+			i++;
+		}
+		if (length != 20)
+		{
+			pt->name[length] = '\0';
+		}
+		pt->life = 1000000;
+		pt->mass = 10000.0;
+		pt->next = NULL;
+		*pt->pid = NULL;
+		pt->sx = 200.0;
+		pt->sy = 200.0;
+		pt->vx = 1.0;
+		pt->vy = 0.0;
+		
+
+		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));
+		if (bytesWritten != -1)
 			printf("data sent to server (bytes = %d)\n", bytesWritten);
 		else
 			printf("failed sending data to server\n");
-	}
 
 	mailslotClose (mailSlot);
 

@@ -124,26 +124,27 @@ DWORD WINAPI mailThread(LPVOID arg) {
 	mailbox = mailslotCreate ("mailbox");
 
 
-	for(;;) {				
-							/* (ordinary file manipulating functions are used to read from mailslots) */
-							/* in this example the server receives strings from the client side and   */
-							/* displays them in the presentation window                               */
-							/* NOTE: binary data can also be sent and received, e.g. planet structures*/
- 
-	bytesRead = mailslotRead (mailbox, buffer, strlen(buffer)); 
+	for (;;) {
+			/* (ordinary file manipulating functions are used to read from mailslots) */
+			/* in this example the server receives strings from the client side and   */
+			/* displays them in the presentation window                               */
+			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+		planet_type* tmp = malloc(sizeof(planet_type));
+		bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 
-	if(bytesRead!= 0) {
-							/* NOTE: It is appropriate to replace this code with something */
-							/*       that match your needs here.                           */
-		posY++;  
-							/* (hDC is used reference the previously created window) */							
-		TextOut(hDC, 10, 50+posY%200, buffer, bytesRead);
+		if (bytesRead != 0) {
+				/* NOTE: It is appropriate to replace this code with something */
+				/*       that match your needs here.                           */
+			posY++;
+				/* (hDC is used reference the previously created window) */
+			bytesRead = strlen(tmp->name)+1;
+			TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
+		}
+		else {
+				/* failed reading from mailslot                              */
+				/* (in this example we ignore this, and happily continue...) */
+		}
 	}
-	else {
-							/* failed reading from mailslot                              */
-							/* (in this example we ignore this, and happily continue...) */
-    }
-  }
 
   return 0;
 }
