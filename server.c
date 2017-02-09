@@ -37,10 +37,10 @@
 /*       types are of importance to you we will write comments*/
 /*       to indicate that. (Ignore them for now.)             */
 /**************************************************************/
-
+planet_type* head = NULL;
 LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
-void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life);
+void createPlanet(planet_type* pt);
 void Planet(planet_type* tp);
 
 
@@ -126,22 +126,28 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 	mailbox = mailslotCreate("mailbox");
 
-
+	planet_type* head = NULL;
 	for (;;) {
-		/* (ordinary file manipulating functions are used to read from mailslots) */
-		/* in this example the server receives strings from the client side and   */
-		/* displays them in the presentation window                               */
-		/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+
+			/* (ordinary file manipulating functions are used to read from mailslots) */
+			/* in this example the server receives strings from the client side and   */
+			/* displays them in the presentation window                               */
+			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+
 		planet_type* tmp = malloc(sizeof(planet_type));
 		bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 
-		if (bytesRead != 0) {
-			/* NOTE: It is appropriate to replace this code with something */
-			/*       that match your needs here.                           */
-			posY++;
-			/* (hDC is used reference the previously created window) */
-			bytesRead = strlen(tmp->name) + 1;
-			TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
+		if (bytesRead != 0) 
+		{
+			createPlanet(&head, tmp);
+
+
+				/* NOTE: It is appropriate to replace this code with something */
+				/*       that match your needs here.                           */
+			//posY++;
+				/* (hDC is used reference the previously created window) */
+			//bytesRead = strlen(tmp->name)+1;
+			//TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
 		}
 		else {
 			/* failed reading from mailslot                              */
@@ -194,9 +200,9 @@ void Planet(planet_type* pt)
 	}
 
 }
-void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life)
+void createPlanet(planet_type* pt)
 {
-	planet_type* tmp_new = malloc(sizeof(planet_type));
+	/*planet_type* tmp_new = malloc(sizeof(planet_type));
 	int i = 0;
 	int len = strlen(name);
 	for (i = 0; i <= len; i++)
@@ -209,22 +215,22 @@ void createPlanet(planet_type** head, char name[20], double mass, double posX, d
 	tmp_new->vx = velX;
 	tmp_new->vy = velY;
 	tmp_new->life = life;
-	*tmp_new->pid = 0; //change later
+	*tmp_new->pid = 0; //change later*/
 
-	if (*head == NULL)
+	if (head == NULL)
 	{
-		*head = tmp_new;
-		(*head)->next = NULL;
+		head = pt;
+		(head)->next = NULL;
 	}
-	else if ((*head)->next == NULL)
+	else if ((head)->next == NULL)
 	{
-		tmp_new->next = *head;
-		(*head)->next = tmp_new;
+		pt->next = head;
+		(head)->next = pt;
 	}
-	else if ((*head)->next != NULL)
+	else if ((head)->next != NULL)
 	{
-		tmp_new->next = (*head)->next;
-		(*head)->next = tmp_new;
+		pt->next = (head)->next;
+		(head)->next = pt;
 	}
 	//threadCreate();
 }
