@@ -12,7 +12,25 @@
 #include <windows.h>
 #include <string.h>
 #include "wrapper.h"
+void sort_number(char *input)
+{
+	int i, j = 0;
 
+	for (i = 0; i < 10 && input[i] != '\0'; i++)		//removes all non numbers exept '.' and '-'
+	{
+		if (isdigit(input[i]) != 0 || input[i] == '.' || input[i] == '-')
+		{
+			input[j] = input[i];
+			j++;
+		}
+	}
+	/*if (isdigit(input[0]) != 0)
+	{
+		input[0] == '0';
+		j = 1;
+	}*/
+	input[j] = '\0';
+}
 //#define MESSAGE "Hello! Fucktard"
 void input(char* msg)
 {
@@ -67,15 +85,50 @@ void main(void) {
 		{
 			pt->name[length] = '\0';
 		}
-		pt->life = 5000;
 
-		pt->mass = 100000000.0;
+		pt->life = 5000;
+		
+		do
+		{
+			printf("enter the mass of %s\n", pt->name);
+			input(MESSAGE);
+			sort_number(MESSAGE);
+			pt->mass = atof(MESSAGE);
+			//pt->mass = 100000000.0;
+		} while (pt->mass < 0);
+
 		pt->next = NULL;
 		*pt->pid = NULL;
-		pt->sx = 300.0;
-		pt->sy = 300.0;
-		pt->vx = 0.001;
-		pt->vy = 0.0;
+
+		do
+		{
+			printf("enter the x-position of %s\n", pt->name);
+			input(MESSAGE);
+			sort_number(MESSAGE);
+			pt->sx = atof(MESSAGE);
+		} while (pt->sx < 0 || pt->sx >800);
+
+		
+		do
+		{
+			printf("enter the y-position of %s\n", pt->name);
+			input(MESSAGE);
+			sort_number(MESSAGE);
+			pt->sy = atof(MESSAGE);
+		} while (pt->sy < 0 || pt->sy >600);
+
+		
+		printf("enter the x-speed of %s\n", pt->name);
+		input(MESSAGE);
+		sort_number(MESSAGE);
+		pt->vx = atof(MESSAGE);
+		
+		
+		printf("enter the y-speed of %s\n", pt->name);
+		input(MESSAGE);
+		sort_number(MESSAGE);
+		pt->vy = atof(MESSAGE);
+		
 
 
 		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));
