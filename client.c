@@ -49,6 +49,8 @@ void main(void) {
 	}
 	planet_type* pt = malloc(sizeof(planet_type));
 	char* MESSAGE = malloc(1024);
+	while (TRUE)
+	{
 		do
 		{
 			printf("What is the planets name?\n");
@@ -66,6 +68,7 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 		pt->life = 5000;
+
 		pt->mass = 100000000.0;
 		pt->next = NULL;
 		*pt->pid = NULL;
@@ -73,14 +76,14 @@ void main(void) {
 		pt->sy = 300.0;
 		pt->vx = 0.001;
 		pt->vy = 0.0;
-		
+
 
 		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));
 		if (bytesWritten != -1)
 			printf("data sent to server (bytes = %d)\n", bytesWritten);
 		else
 			printf("failed sending data to server\n");
-
+	}
 	mailslotClose (mailSlot);
 
 					/* (sleep for a while, enables you to catch a glimpse of what the */

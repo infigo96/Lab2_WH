@@ -179,6 +179,7 @@ void Planet(planet_type* pt)
 	{
 		planet_type* tmp = pt->next;
 		planet_type* tmp2;
+
 		double total_time, a = 0, ax = 0, ay = 0, r = 0;
 		clock_t time2, time = clock();
 
@@ -197,6 +198,7 @@ void Planet(planet_type* pt)
 				pt = pt->next;
 				return;
 			}
+
 		}
 		if (pt->next != NULL)
 		{
