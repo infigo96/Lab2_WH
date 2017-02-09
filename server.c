@@ -142,7 +142,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			createPlanet(tmp);
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
 			
-			planet_type* pt = malloc(sizeof(planet_type));
+			/*planet_type* pt = malloc(sizeof(planet_type));
 			pt->name[0] = 'H';
 			pt->name[1] = 'e';
 			pt->name[2] = 'j';
@@ -156,7 +156,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			pt->vx = 0.0;
 			pt->vy = 0.008;
 			createPlanet(pt);
-			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);
+			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);^*/
 
 				/* NOTE: It is appropriate to replace this code with something */
 				/*       that match your needs here.                           */
@@ -217,7 +217,7 @@ void Planet(planet_type* pt)
 			pt->sx = pt->sx + pt->vx * 10;
 			pt->sy = pt->sy + pt->vy * 10;
 			time = clock();
-			Sleep(1);
+			Sleep(2);
 		}
 	}
 }
