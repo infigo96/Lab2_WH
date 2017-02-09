@@ -66,13 +66,13 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 		pt->life = 1000000;
-		pt->mass = 40000.0;
+		pt->mass = 100000000.0;
 		pt->next = NULL;
 		*pt->pid = NULL;
-		pt->sx = 400.0;
-		pt->sy = 400.0;
+		pt->sx = 300.0;
+		pt->sy = 300.0;
 		pt->vx = 0.0;
-		pt->vy = 5.0;
+		pt->vy = 0.0;
 		
 
 		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));

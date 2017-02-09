@@ -139,8 +139,24 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 		if (bytesRead != 0) 
 		{
-			createPlanet(&head, tmp);
-
+			createPlanet(tmp);
+			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
+			
+			planet_type* pt = malloc(sizeof(planet_type));
+			pt->name[0] = 'H';
+			pt->name[1] = 'e';
+			pt->name[2] = 'j';
+			pt->name[3] = '\0';
+			pt->life = 1000000;
+			pt->mass = 1000.0;
+			pt->next = NULL;
+			*pt->pid = NULL;
+			pt->sx = 200.0;
+			pt->sy = 300.0;
+			pt->vx = 0.0;
+			pt->vy = 0.008;
+			createPlanet(pt);
+			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);
 
 				/* NOTE: It is appropriate to replace this code with something */
 				/*       that match your needs here.                           */
@@ -195,7 +211,6 @@ void Planet(planet_type* pt)
 		pt->sx = pt->sx + pt->vx * 10;
 		pt->sy = pt->sy + pt->vy * 10;
 		time = clock();
-		(pt->life)--;
 		Sleep(1);
 	}
 
@@ -260,25 +275,25 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	static DWORD color = 0;
 
 	planet_type* pt = NULL;
-	planet_type* tmp;
+	planet_type* tmp = NULL;
 
-	char name[20] = "Mars";
+	/*char name[20] = "Mars";
 	double mass = 100000000;
 	double SX = 300;
 	double SY = 300;
 	double velX = 0.002;
 	double velY = 0;
 	int life = 20000;
-	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
+	//createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
 
-	/*char name2[20] = "Pluto";
+	char name2[20] = "Pluto";
 	mass = 1000000000;
 	SX = 300;
 	SY = 200;
 	velX = 0;
 	velY = 0;
 	life = 300;
-	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);*/
+	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
 
 	char name3[20] = "Venus";
 	mass = 1000;
@@ -287,7 +302,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	velX = 0;
 	velY = 0.008;
 	life = 10000;
-	createPlanet(&pt, name3, mass, SX, SY, velX, velY, life);
+	createPlanet(&pt, name3, mass, SX, SY, velX, velY, life);*/
 	switch (msg) {
 		/**************************************************************/
 		/*    WM_CREATE:        (received on window creation)
@@ -307,16 +322,20 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/* here we draw a simple sinus curve in the window    */
 		while (TRUE)
 		{
-			tmp = pt;
-			while (pt->next != NULL)
+			while (head != NULL)
 			{
-				posX = (int)pt->sx;
-				posY = (int)pt->sy;
-				SetPixel(hDC, posX, posY, (COLORREF)color);
-				color += 1;
-				windowRefreshTimer(hWnd, UPDATE_FREQ);
-				Planet(pt);
-				pt = pt->next;
+				tmp = head;
+				while (tmp->next != NULL)
+				{
+					posX = (int)tmp->sx;
+					posY = (int)tmp->sy;
+					SetPixel(hDC, posX, posY, (COLORREF)color);
+					color += 1;
+					windowRefreshTimer(hWnd, UPDATE_FREQ);
+					//Planet(pt);
+					tmp = tmp->next;
+					Sleep(1000);
+				}
 			}
 			pt = tmp;
 		}
