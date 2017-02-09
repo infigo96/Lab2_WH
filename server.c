@@ -175,63 +175,52 @@ DWORD WINAPI mailThread(LPVOID arg) {
 }
 void Planet(planet_type* pt)
 {
-	planet_type* tmp = pt->next;
-	double total_time, a = 0, ax = 0, ay = 0, r = 0;
-	clock_t time2, time = clock();
-
-	pt->life--;
-	if (pt->life <= 0)
+	while (pt->life > 0)
 	{
-		if (pt->next == NULL)
-		{
-			pt = NULL;
-			free(pt);
-			return;
-		}
-		else if (pt->next != NULL) {
-			pt = pt->next;
-			return;
-		}
+		planet_type* tmp = pt->next;
+		planet_type* tmp2;
+		double total_time, a = 0, ax = 0, ay = 0, r = 0;
+		clock_t time2, time = clock();
 
-	}
-	if (pt->next != NULL)
-	{
-		while (tmp != pt)
+		pt->life--;
+		if (pt->life <= 0)
 		{
-			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-			a = (GRAV*(tmp->mass)) / pow(r, 2);
-			ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
-			ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
-			tmp = tmp->next;
+			if (pt->next == NULL)
+			{
+				free(pt);
+				pt = NULL;
+				head = NULL;
+				return;
+			}
+			else if (pt->next != NULL) {
+				pt->mass = 0;
+				pt = pt->next;
+				return;
+			}
 		}
-		time2 = clock();
-		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-		pt->vx = pt->vx + ax * 10;
-		pt->vy = pt->vy + ay * 10;
-		pt->sx = pt->sx + pt->vx * 10;
-		pt->sy = pt->sy + pt->vy * 10;
-		time = clock();
-		Sleep(1);
+		if (pt->next != NULL)
+		{
+			while (tmp != pt)
+			{
+				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
+				a = (GRAV*(tmp->mass)) / pow(r, 2);
+				ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
+				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
+				tmp = tmp->next;
+			}
+			time2 = clock();
+			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
+			pt->vx = pt->vx + ax * 10;
+			pt->vy = pt->vy + ay * 10;
+			pt->sx = pt->sx + pt->vx * 10;
+			pt->sy = pt->sy + pt->vy * 10;
+			time = clock();
+			Sleep(1);
+		}
 	}
-
 }
 void createPlanet(planet_type* pt)
 {
-	/*planet_type* tmp_new = malloc(sizeof(planet_type));
-	int i = 0;
-	int len = strlen(name);
-	for (i = 0; i <= len; i++)
-	{
-		tmp_new->name[i] = name[i];
-	}
-	tmp_new->mass = mass;
-	tmp_new->sx = posX;
-	tmp_new->sy = posY;
-	tmp_new->vx = velX;
-	tmp_new->vy = velY;
-	tmp_new->life = life;
-	*tmp_new->pid = 0; //change later*/
-
 	if (head == NULL)
 	{
 		head = pt;
@@ -247,7 +236,6 @@ void createPlanet(planet_type* pt)
 		pt->next = (head)->next;
 		(head)->next = pt;
 	}
-	//threadCreate();
 }
 
 
@@ -277,32 +265,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	planet_type* pt = NULL;
 	planet_type* tmp = NULL;
 
-	/*char name[20] = "Mars";
-	double mass = 100000000;
-	double SX = 300;
-	double SY = 300;
-	double velX = 0.002;
-	double velY = 0;
-	int life = 20000;
-	//createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
-
-	char name2[20] = "Pluto";
-	mass = 1000000000;
-	SX = 300;
-	SY = 200;
-	velX = 0;
-	velY = 0;
-	life = 300;
-	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-
-	char name3[20] = "Venus";
-	mass = 1000;
-	SX = 200;
-	SY = 300;
-	velX = 0;
-	velY = 0.008;
-	life = 10000;
-	createPlanet(&pt, name3, mass, SX, SY, velX, velY, life);*/
 	switch (msg) {
 		/**************************************************************/
 		/*    WM_CREATE:        (received on window creation)
@@ -329,12 +291,21 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				{
 					posX = (int)tmp->sx;
 					posY = (int)tmp->sy;
+
+					int posX1 = posX - 1;
+					int posX2 = posX + 1;
+					int posY1 = posY - 1;
+					int posY2 = posY + 1;
+					SetPixel(hDC, posX, posY, (COLORREF)color);
+					SetPixel(hDC, posX1, posY, (COLORREF)color);
+					SetPixel(hDC, posX2, posY, (COLORREF)color);
+					SetPixel(hDC, posX, posY1, (COLORREF)color);
+					SetPixel(hDC, posX, posY2, (COLORREF)color);
+
 					SetPixel(hDC, posX, posY, (COLORREF)color);
 					color += 1;
 					windowRefreshTimer(hWnd, UPDATE_FREQ);
-					//Planet(pt);
 					tmp = tmp->next;
-					Sleep(1000);
 				}
 			}
 			pt = tmp;
