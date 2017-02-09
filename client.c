@@ -67,14 +67,14 @@ void main(void) {
 		{
 			pt->name[length] = '\0';
 		}
-		pt->life = 1000000;
-		input(MESSAGE);
+		pt->life = 5000;
+
 		pt->mass = 100000000.0;
 		pt->next = NULL;
 		*pt->pid = NULL;
 		pt->sx = 300.0;
 		pt->sy = 300.0;
-		pt->vx = 0.0;
+		pt->vx = 0.001;
 		pt->vy = 0.0;
 
 
