@@ -117,7 +117,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 	DWORD bytesRead;
 	static int posY = 0;
 	HANDLE mailbox;
-
+	planet_type* tmp = NULL;
 	/* create a mailslot that clients can use to pass requests through   */
 	/* (the clients use the name below to get contact with the mailslot) */
 	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
@@ -125,8 +125,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 
 	mailbox = mailslotCreate("mailbox");
-
-	planet_type* head = NULL;
+	
 	for (;;) {
 
 			/* (ordinary file manipulating functions are used to read from mailslots) */
@@ -134,11 +133,14 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			/* displays them in the presentation window                               */
 			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
 
-		planet_type* tmp = malloc(sizeof(planet_type));
-		bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
+		
+		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
+		
 
-		if (bytesRead != 0) 
+		if (bytesRead != -1) 
 		{
+			tmp = malloc(sizeof(planet_type));
+			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 			createPlanet(tmp);
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
 			
@@ -175,14 +177,14 @@ DWORD WINAPI mailThread(LPVOID arg) {
 }
 void Planet(planet_type* pt)
 {
-	while (pt->life > 0)
-	{
 		planet_type* tmp = pt->next;
 		planet_type* tmp2;
 
 		double total_time, a = 0, ax = 0, ay = 0, r = 0;
 		clock_t time2, time = clock();
 
+	while (pt->life > 0)
+	{
 		pt->life--;
 		if (pt->life <= 0)
 		{
@@ -200,7 +202,7 @@ void Planet(planet_type* pt)
 			}
 
 		}
-		if (pt->next != NULL)
+		if (tmp != NULL)
 		{
 			while (tmp != pt)
 			{
@@ -286,10 +288,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/* here we draw a simple sinus curve in the window    */
 		while (TRUE)
 		{
-			while (head != NULL)
+			if (head != NULL)
 			{
 				tmp = head;
-				while (tmp->next != NULL)
+				if (tmp->next != NULL)
 				{
 					posX = (int)tmp->sx;
 					posY = (int)tmp->sy;
@@ -310,7 +312,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 					tmp = tmp->next;
 				}
 			}
-			pt = tmp;
+			
 		}
 
 		/****************************************************************\
