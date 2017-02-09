@@ -74,7 +74,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	/* The tile of the window, the callback function */
 	/* and the backgrond color */
 
-	hWnd = windowCreate(hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW + 2);
+	hWnd = windowCreate(hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW + 3);
 
 	/* start the timer for the periodic update of the window    */
 	/* (this is a one-shot timer, which means that it has to be */
@@ -123,29 +123,29 @@ DWORD WINAPI mailThread(LPVOID arg) {
 	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
 
 
-	
-	mailbox = mailslotCreate ("mailbox");
+
+	mailbox = mailslotCreate("mailbox");
 
 
 	for (;;) {
-			/* (ordinary file manipulating functions are used to read from mailslots) */
-			/* in this example the server receives strings from the client side and   */
-			/* displays them in the presentation window                               */
-			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+		/* (ordinary file manipulating functions are used to read from mailslots) */
+		/* in this example the server receives strings from the client side and   */
+		/* displays them in the presentation window                               */
+		/* NOTE: binary data can also be sent and received, e.g. planet structures*/
 		planet_type* tmp = malloc(sizeof(planet_type));
 		bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 
 		if (bytesRead != 0) {
-				/* NOTE: It is appropriate to replace this code with something */
-				/*       that match your needs here.                           */
+			/* NOTE: It is appropriate to replace this code with something */
+			/*       that match your needs here.                           */
 			posY++;
-				/* (hDC is used reference the previously created window) */
-			bytesRead = strlen(tmp->name)+1;
+			/* (hDC is used reference the previously created window) */
+			bytesRead = strlen(tmp->name) + 1;
 			TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
 		}
 		else {
-				/* failed reading from mailslot                              */
-				/* (in this example we ignore this, and happily continue...) */
+			/* failed reading from mailslot                              */
+			/* (in this example we ignore this, and happily continue...) */
 		}
 	}
 
@@ -157,7 +157,21 @@ void Planet(planet_type* pt)
 	double total_time, a = 0, ax = 0, ay = 0, r = 0;
 	clock_t time2, time = clock();
 
+	pt->life--;
+	if (pt->life <= 0)
+	{
+		if (pt->next == NULL)
+		{
+			pt = NULL;
+			free(pt);
+			return;
+		}
+		else if (pt->next != NULL) {
+			pt = pt->next;
+			return;
+		}
 
+	}
 	if (pt->next != NULL)
 	{
 		while (tmp != pt)
@@ -246,28 +260,28 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	double mass = 100000000;
 	double SX = 300;
 	double SY = 300;
-	double velX = 0;
-	double velY = -0.002;
-	int life = 100;
+	double velX = 0.002;
+	double velY = 0;
+	int life = 20000;
 	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
 
-	char name2[20] = "Pluto";
+	/*char name2[20] = "Pluto";
+	mass = 1000000000;
+	SX = 300;
+	SY = 200;
+	velX = 0;
+	velY = 0;
+	life = 300;
+	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);*/
+
+	char name3[20] = "Venus";
 	mass = 1000;
-	SX = 220;
+	SX = 200;
 	SY = 300;
 	velX = 0;
 	velY = 0.008;
-	life = 300;
-	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-
-	char name3[20] = "Venus";
-	mass = 10000;
-	SX = 300;
-	SY = 220;
-	velX = 0.004;
-	velY = 0;
-	life = 300;
-	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
+	life = 10000;
+	createPlanet(&pt, name3, mass, SX, SY, velX, velY, life);
 	switch (msg) {
 		/**************************************************************/
 		/*    WM_CREATE:        (received on window creation)
@@ -290,25 +304,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			tmp = pt;
 			while (pt->next != NULL)
 			{
-			/*	if (pt->life <= 0)
-				{
-					if (pt->next == NULL)
-					{
-						pt = NULL;
-						free(pt);
-					}
-					else if (pt->next != NULL) {
-						pt = pt->next;
-					}
-
-				}*/
 				posX = (int)pt->sx;
 				posY = (int)pt->sy;
 				SetPixel(hDC, posX, posY, (COLORREF)color);
 				color += 1;
 				windowRefreshTimer(hWnd, UPDATE_FREQ);
 				Planet(pt);
-				pt->life--;
 				pt = pt->next;
 			}
 			pt = tmp;
