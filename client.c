@@ -69,6 +69,7 @@ void main(void) {
 	char* MESSAGE = malloc(1024);
 	while (TRUE)
 	{
+		i = 0;
 		do
 		{
 			printf("What is the planets name?\n");
@@ -86,7 +87,7 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 
-		pt->life = 5000;
+		pt->life = 1000000;
 		
 		do
 		{
