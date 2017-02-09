@@ -123,27 +123,29 @@ DWORD WINAPI mailThread(LPVOID arg) {
 	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
 
 
-	mailbox = mailslotCreate("mailbox");
+	
+	mailbox = mailslotCreate ("mailbox");
 
 
 	for (;;) {
-		/* (ordinary file manipulating functions are used to read from mailslots) */
-		/* in this example the server receives strings from the client side and   */
-		/* displays them in the presentation window                               */
-		/* NOTE: binary data can also be sent and received, e.g. planet structures*/
-
-		bytesRead = mailslotRead(mailbox, buffer, strlen(buffer));
+			/* (ordinary file manipulating functions are used to read from mailslots) */
+			/* in this example the server receives strings from the client side and   */
+			/* displays them in the presentation window                               */
+			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+		planet_type* tmp = malloc(sizeof(planet_type));
+		bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 
 		if (bytesRead != 0) {
-			/* NOTE: It is appropriate to replace this code with something */
-			/*       that match your needs here.                           */
+				/* NOTE: It is appropriate to replace this code with something */
+				/*       that match your needs here.                           */
 			posY++;
-			/* (hDC is used reference the previously created window) */
-			TextOut(hDC, 10, 50 + posY % 200, buffer, bytesRead);
+				/* (hDC is used reference the previously created window) */
+			bytesRead = strlen(tmp->name)+1;
+			TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
 		}
 		else {
-			/* failed reading from mailslot                              */
-			/* (in this example we ignore this, and happily continue...) */
+				/* failed reading from mailslot                              */
+				/* (in this example we ignore this, and happily continue...) */
 		}
 	}
 
@@ -266,8 +268,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	velY = 0;
 	life = 300;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-<<<<<<< HEAD
-
 	switch (msg) {
 		/**************************************************************/
 		/*    WM_CREATE:        (received on window creation)
@@ -289,30 +289,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		{
 			tmp = pt;
 			while (pt->next != NULL)
-=======
-	//Planet(pt->next);
-	
-
-	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
-	switch( msg ) {
-							/**************************************************************/
-							/*    WM_CREATE:        (received on window creation)
-							/**************************************************************/
-		case WM_CREATE:       
-			hDC = GetDC(hWnd);  
-			break;   
-							/**************************************************************/
-							/*    WM_TIMER:         (received when our timer expires)
-							/**************************************************************/
-		case WM_TIMER:
-
-							/* NOTE: replace code below for periodic update of the window */
-							/*       e.g. draw a planet system)                           */
-							/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
-
-							/* here we draw a simple sinus curve in the window    */
-			while (TRUE)
->>>>>>> origin/Wicktor
 			{
 			/*	if (pt->life <= 0)
 				{
