@@ -266,6 +266,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	velY = 0;
 	life = 300;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
+<<<<<<< HEAD
 
 	switch (msg) {
 		/**************************************************************/
@@ -288,6 +289,30 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		{
 			tmp = pt;
 			while (pt->next != NULL)
+=======
+	//Planet(pt->next);
+	
+
+	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
+	switch( msg ) {
+							/**************************************************************/
+							/*    WM_CREATE:        (received on window creation)
+							/**************************************************************/
+		case WM_CREATE:       
+			hDC = GetDC(hWnd);  
+			break;   
+							/**************************************************************/
+							/*    WM_TIMER:         (received when our timer expires)
+							/**************************************************************/
+		case WM_TIMER:
+
+							/* NOTE: replace code below for periodic update of the window */
+							/*       e.g. draw a planet system)                           */
+							/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
+
+							/* here we draw a simple sinus curve in the window    */
+			while (TRUE)
+>>>>>>> origin/Wicktor
 			{
 			/*	if (pt->life <= 0)
 				{
