@@ -175,45 +175,47 @@ DWORD WINAPI mailThread(LPVOID arg) {
 }
 void Planet(planet_type* pt)
 {
-	planet_type* tmp = pt->next;
-	double total_time, a = 0, ax = 0, ay = 0, r = 0;
-	clock_t time2, time = clock();
-
-	pt->life--;
-	if (pt->life <= 0)
+	while (pt->life > 0)
 	{
-		if (pt->next == NULL)
-		{
-			pt = NULL;
-			free(pt);
-			return;
-		}
-		else if (pt->next != NULL) {
-			pt = pt->next;
-			return;
-		}
+		planet_type* tmp = pt->next;
+		double total_time, a = 0, ax = 0, ay = 0, r = 0;
+		clock_t time2, time = clock();
 
-	}
-	if (pt->next != NULL)
-	{
-		while (tmp != pt)
+		pt->life--;
+		if (pt->life <= 0)
 		{
-			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-			a = (GRAV*(tmp->mass)) / pow(r, 2);
-			ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
-			ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
-			tmp = tmp->next;
-		}
-		time2 = clock();
-		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-		pt->vx = pt->vx + ax * 10;
-		pt->vy = pt->vy + ay * 10;
-		pt->sx = pt->sx + pt->vx * 10;
-		pt->sy = pt->sy + pt->vy * 10;
-		time = clock();
-		Sleep(1);
-	}
+			if (pt->next == NULL)
+			{
+				pt = NULL;
+				free(pt);
+				return;
+			}
+			else if (pt->next != NULL) {
+				pt = pt->next;
+				return;
+			}
 
+		}
+		if (pt->next != NULL)
+		{
+			while (tmp != pt)
+			{
+				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
+				a = (GRAV*(tmp->mass)) / pow(r, 2);
+				ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
+				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
+				tmp = tmp->next;
+			}
+			time2 = clock();
+			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
+			pt->vx = pt->vx + ax * 10;
+			pt->vy = pt->vy + ay * 10;
+			pt->sx = pt->sx + pt->vx * 10;
+			pt->sy = pt->sy + pt->vy * 10;
+			time = clock();
+			Sleep(1);
+		}
+	}
 }
 void createPlanet(planet_type* pt)
 {
@@ -334,7 +336,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 					windowRefreshTimer(hWnd, UPDATE_FREQ);
 					//Planet(pt);
 					tmp = tmp->next;
-					Sleep(1000);
 				}
 			}
 			pt = tmp;
