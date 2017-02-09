@@ -23,8 +23,8 @@
 #include <time.h>
 #include "wrapper.h"
 
-							/* the server uses a timer to periodically update the presentation window */
-							/* here is the timer id and timer period defined                          */
+/* the server uses a timer to periodically update the presentation window */
+/* here is the timer id and timer period defined                          */
 #define GRAV	0.0000000000667259
 #define UPDATE_FREQ     10	/* update frequency (in ms) for the timer */
 
@@ -34,12 +34,14 @@
 
 /*********************  Prototypes  ***************************/
 /* NOTE: Windows has defined its own set of types. When the   */
-/*       types are of importance to you we will write comments*/ 
+/*       types are of importance to you we will write comments*/
 /*       to indicate that. (Ignore them for now.)             */
 /**************************************************************/
 
-LRESULT WINAPI MainWndProc( HWND, UINT, WPARAM, LPARAM );
+LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
+void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life);
+void Planet(planet_type* tp);
 
 
 
@@ -57,47 +59,47 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 *                                                                    *
 \********************************************************************/
 
-							/* NOTE: This function is not too important to you, it only */
-							/*       initializes a bunch of things.                     */
-							/* NOTE: In windows WinMain is the start function, not main */
+/* NOTE: This function is not too important to you, it only */
+/*       initializes a bunch of things.                     */
+/* NOTE: In windows WinMain is the start function, not main */
 
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow ) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
 
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
-	
 
-							/* Create the window, 3 last parameters important */
-							/* The tile of the window, the callback function */
-							/* and the backgrond color */
 
-	hWnd = windowCreate (hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW+1);
+	/* Create the window, 3 last parameters important */
+	/* The tile of the window, the callback function */
+	/* and the backgrond color */
 
-							/* start the timer for the periodic update of the window    */
-							/* (this is a one-shot timer, which means that it has to be */
-							/* re-set after each time-out) */
-							/* NOTE: When this timer expires a message will be sent to  */
-							/*       our callback function (MainWndProc).               */
-  
-	windowRefreshTimer (hWnd, UPDATE_FREQ);
-  
+	hWnd = windowCreate(hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW + 2);
 
-							/* create a thread that can handle incoming client requests */
-							/* (the thread starts executing in the function mailThread) */
-							/* NOTE: See online help for details, you need to know how  */ 
-							/*       this function does and what its parameters mean.   */
-							/* We have no parameters to pass, hence NULL				*/
-  
+	/* start the timer for the periodic update of the window    */
+	/* (this is a one-shot timer, which means that it has to be */
+	/* re-set after each time-out) */
+	/* NOTE: When this timer expires a message will be sent to  */
+	/*       our callback function (MainWndProc).               */
 
-	threadID = threadCreate (mailThread, NULL); 
-  
+	windowRefreshTimer(hWnd, UPDATE_FREQ);
 
-							/* (the message processing loop that all windows applications must have) */
-							/* NOTE: just leave it as it is. */
-	while( GetMessage( &msg, NULL, 0, 0 ) ) {
-		TranslateMessage( &msg );
-		DispatchMessage( &msg );
+
+	/* create a thread that can handle incoming client requests */
+	/* (the thread starts executing in the function mailThread) */
+	/* NOTE: See online help for details, you need to know how  */
+	/*       this function does and what its parameters mean.   */
+	/* We have no parameters to pass, hence NULL				*/
+
+
+	threadID = threadCreate(mailThread, NULL);
+
+
+	/* (the message processing loop that all windows applications must have) */
+	/* NOTE: just leave it as it is. */
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
 	}
 
 	return msg.wParam;
@@ -116,9 +118,10 @@ DWORD WINAPI mailThread(LPVOID arg) {
 	static int posY = 0;
 	HANDLE mailbox;
 
-							/* create a mailslot that clients can use to pass requests through   */
-							/* (the clients use the name below to get contact with the mailslot) */
-							/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
+	/* create a mailslot that clients can use to pass requests through   */
+	/* (the clients use the name below to get contact with the mailslot) */
+	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
+
 
 	
 	mailbox = mailslotCreate ("mailbox");
@@ -146,71 +149,71 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		}
 	}
 
-  return 0;
+	return 0;
 }
 void Planet(planet_type* pt)
 {
 	planet_type* tmp = pt->next;
 	double total_time, a = 0, ax = 0, ay = 0, r = 0;
 	clock_t time2, time = clock();
-	//while (pt->life > 0)
-	//{
-		if (pt->next != NULL)
+
+
+	if (pt->next != NULL)
+	{
+		while (tmp != pt)
 		{
-			while (tmp != pt)
-			{
-				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-				a = (GRAV*(tmp->mass)) / pow(r, 2);
-				ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
-				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
-				tmp = tmp->next;
-			}
-			time2 = clock();
-			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-			pt->vx = pt->vx + ax*10;
-			pt->vy = pt->vy + ay*10;
-			pt->sx = pt->sx + pt->vx*10;
-			pt->sy = pt->sy + pt->vy*10;
-			time = clock();
-			(pt->life)--;
-			Sleep(1);
+			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
+			a = (GRAV*(tmp->mass)) / pow(r, 2);
+			ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
+			ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
+			tmp = tmp->next;
 		}
-	//}
+		time2 = clock();
+		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
+		pt->vx = pt->vx + ax * 10;
+		pt->vy = pt->vy + ay * 10;
+		pt->sx = pt->sx + pt->vx * 10;
+		pt->sy = pt->sy + pt->vy * 10;
+		time = clock();
+		(pt->life)--;
+		Sleep(1);
+	}
+
 }
 void createPlanet(planet_type** head, char name[20], double mass, double posX, double posY, double velX, double velY, int life)
-{	
-		planet_type* tmp_new = malloc(sizeof(planet_type));
-		int i = 0; 
-		int len = strlen(name);
-		for (i = 0; i<= len ; i++)
-		{
-			tmp_new->name[i] = name[i];
-		}
-		tmp_new->mass = mass;
-		tmp_new->sx = posX;
-		tmp_new->sy = posY;
-		tmp_new->vx = velX;
-		tmp_new->vy = velY;
-		tmp_new->life = life;
-		*tmp_new->pid = 0; //change later
-
-		if (*head == NULL)
-		{
-			*head = tmp_new;
-			(*head)->next = NULL;
-		}
-		else if ((*head)->next == NULL)
-		{
-			tmp_new->next = *head;
-			(*head)->next = tmp_new;
-		}
-		else if ((*head)->next != NULL)
-		{
-			tmp_new->next = (*head)->next;
-			(*head)->next = tmp_new;
-		}
-		//threadCreate();
+{
+	planet_type* tmp_new = malloc(sizeof(planet_type));
+	int i = 0;
+	int len = strlen(name);
+	for (i = 0; i <= len; i++)
+	{
+		tmp_new->name[i] = name[i];
 	}
+	tmp_new->mass = mass;
+	tmp_new->sx = posX;
+	tmp_new->sy = posY;
+	tmp_new->vx = velX;
+	tmp_new->vy = velY;
+	tmp_new->life = life;
+	*tmp_new->pid = 0; //change later
+
+	if (*head == NULL)
+	{
+		*head = tmp_new;
+		(*head)->next = NULL;
+	}
+	else if ((*head)->next == NULL)
+	{
+		tmp_new->next = *head;
+		(*head)->next = tmp_new;
+	}
+	else if ((*head)->next != NULL)
+	{
+		tmp_new->next = (*head)->next;
+		(*head)->next = tmp_new;
+	}
+	//threadCreate();
+}
 
 
 
@@ -228,117 +231,123 @@ void createPlanet(planet_type** head, char name[20], double mass, double posX, d
 \********************************************************************/
 /* NOTE: This function is called by Windows when something happens to our window */
 
-LRESULT CALLBACK MainWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
-  
+LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
 	PAINTSTRUCT ps;
 	static int posX = 10;
 	int posY;
 	HANDLE context;
 	static DWORD color = 0;
+
 	planet_type* pt = NULL;
 	planet_type* tmp;
+
 	char name[20] = "Mars";
-	double mass = 200000000;
+	double mass = 100000000;
 	double SX = 300;
 	double SY = 300;
-	double velX = -0.002;
-	double velY = 0;
-	double life = 30000;
+	double velX = 0;
+	double velY = -0.002;
+	int life = 100;
 	createPlanet(&pt, name, mass, SX, SY, velX, velY, life);
-	
+
 	char name2[20] = "Pluto";
 	mass = 1000;
-	SX = 250;
+	SX = 220;
 	SY = 300;
 	velX = 0;
 	velY = 0.008;
-	life = 30000;
+	life = 300;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
 
 	char name3[20] = "Venus";
 	mass = 10000;
-	SX = 400;
-	SY = 400;
-	velX = -0.003;
-	velY = -0.003;
-	life = 30000;
+	SX = 300;
+	SY = 220;
+	velX = 0.004;
+	velY = 0;
+	life = 300;
 	createPlanet(&pt, name2, mass, SX, SY, velX, velY, life);
-	//Planet(pt->next);
-	
+	switch (msg) {
+		/**************************************************************/
+		/*    WM_CREATE:        (received on window creation)
+		/**************************************************************/
+	case WM_CREATE:
+		hDC = GetDC(hWnd);
+		break;
+		/**************************************************************/
+		/*    WM_TIMER:         (received when our timer expires)
+		/**************************************************************/
+	case WM_TIMER:
 
-	//createPlanet(pt, name, mass, SX ,SY, velX, velY, life);
-	switch( msg ) {
-							/**************************************************************/
-							/*    WM_CREATE:        (received on window creation)
-							/**************************************************************/
-		case WM_CREATE:       
-			hDC = GetDC(hWnd);  
-			break;   
-							/**************************************************************/
-							/*    WM_TIMER:         (received when our timer expires)
-							/**************************************************************/
-		case WM_TIMER:
+		/* NOTE: replace code below for periodic update of the window */
+		/*       e.g. draw a planet system)                           */
+		/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
 
-							/* NOTE: replace code below for periodic update of the window */
-							/*       e.g. draw a planet system)                           */
-							/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
-
-							/* here we draw a simple sinus curve in the window    */
-			while (TRUE)
+		/* here we draw a simple sinus curve in the window    */
+		while (TRUE)
+		{
+			tmp = pt;
+			while (pt->next != NULL)
 			{
-				tmp = pt;
-				while (pt->next != NULL)
+			/*	if (pt->life <= 0)
 				{
-					posX = pt->sx;
-					posY = pt->sy;
-					SetPixel(hDC, posX, posY, (COLORREF)color);
-					windowRefreshTimer(hWnd, UPDATE_FREQ);
-					Planet(pt);
-					pt = pt->next;
-				}
-				pt = tmp;
+					if (pt->next == NULL)
+					{
+						pt = NULL;
+						free(pt);
+					}
+					else if (pt->next != NULL) {
+						pt = pt->next;
+					}
+
+				}*/
+				posX = (int)pt->sx;
+				posY = (int)pt->sy;
+				SetPixel(hDC, posX, posY, (COLORREF)color);
+				color += 1;
+				windowRefreshTimer(hWnd, UPDATE_FREQ);
+				Planet(pt);
+				pt->life--;
+				pt = pt->next;
 			}
-			/*posX += 2;
-			posY = (int) (40 * sin(posX / (double) 30) + 20);
-			posY = posY + 50;
-			SetPixel(hDC, posX % 547, posY, (COLORREF) color);
-			color += 12;
-			windowRefreshTimer (hWnd, UPDATE_FREQ);
-			break;*/
-							/****************************************************************\
-							*     WM_PAINT: (received when the window needs to be repainted, *
-							*               e.g. when maximizing the window)                 *
-							\****************************************************************/
+			pt = tmp;
+		}
 
-		case WM_PAINT:
-							/* NOTE: The code for this message can be removed. It's just */
-							/*       for showing something in the window.                */
-			context = BeginPaint( hWnd, &ps ); /* (you can safely remove the following line of code) */
-			TextOut( context, 10, 10, "Hello, World!", 13 ); /* 13 is the string length */
-			EndPaint( hWnd, &ps );
-			break;
-							/**************************************************************\
-							*     WM_DESTROY: PostQuitMessage() is called                  *
-							*     (received when the user presses the "quit" button in the *
-							*      window)                                                 *
-							\**************************************************************/
-		case WM_DESTROY:
-			PostQuitMessage( 0 );
-							/* NOTE: Windows will automatically release most resources this */
-     						/*       process is using, e.g. memory and mailslots.           */
-     						/*       (So even though we don't free the memory which has been*/     
-     						/*       allocated by us, there will not be memory leaks.)      */
+		/****************************************************************\
+		*     WM_PAINT: (received when the window needs to be repainted, *
+		*               e.g. when maximizing the window)                 *
+		\****************************************************************/
 
-			ReleaseDC(hWnd, hDC); /* Some housekeeping */
-			break;
+	case WM_PAINT:
+		/* NOTE: The code for this message can be removed. It's just */
+		/*       for showing something in the window.                */
+		context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
+		TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
+		EndPaint(hWnd, &ps);
+		break;
+		/**************************************************************\
+		*     WM_DESTROY: PostQuitMessage() is called                  *
+		*     (received when the user presses the "quit" button in the *
+		*      window)                                                 *
+		\**************************************************************/
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		/* NOTE: Windows will automatically release most resources this */
+		/*       process is using, e.g. memory and mailslots.           */
+		/*       (So even though we don't free the memory which has been*/
+		/*       allocated by us, there will not be memory leaks.)      */
 
-							/**************************************************************\
-							*     Let the default window proc handle all other messages    *
-							\**************************************************************/
-		default:
-			return( DefWindowProc( hWnd, msg, wParam, lParam )); 
-   }
-   return 0;
+		ReleaseDC(hWnd, hDC); /* Some housekeeping */
+		break;
+
+		/**************************************************************\
+		*     Let the default window proc handle all other messages    *
+		\**************************************************************/
+	default:
+		return(DefWindowProc(hWnd, msg, wParam, lParam));
+	}
+	return 0;
 }
 
 
