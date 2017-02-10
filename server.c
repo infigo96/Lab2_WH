@@ -41,8 +41,8 @@ planet_type* head = NULL;
 LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
-void Planet(planet_type* tp);
-
+void Planet(planet_type* pt);
+CRITICAL_SECTION CS;
 
 
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
@@ -64,7 +64,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-
+	InitializeCriticalSection(&CS);
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -185,20 +185,24 @@ void Planet(planet_type* pt)
 
 	while (pt->life > 0)
 	{
-		pt->life--;
+		ax = 0;
+		a = 0; 
+		ay = 0;
+		(pt->life)--;
 		if (pt->life <= 0)
 		{
 			if (pt->next == NULL)
 			{
-				free(pt);
+				//free(pt);
 				pt = NULL;
 				head = NULL;
 				return;
 			}
 			else if (pt->next != NULL) {
+				EnterCriticalSection(&CS);
 				pt->mass = 0;
-				pt = pt->next;
-				return;
+				//pt = pt->next;
+				LeaveCriticalSection(&CS);
 			}
 
 		}
@@ -208,19 +212,26 @@ void Planet(planet_type* pt)
 			{
 				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
 				a = (GRAV*(tmp->mass)) / pow(r, 2);
-				ax = ax + (a*((tmp->sx) - (pt->sx))) / r;
-				ay = ay + (a*((tmp->sy) - (pt->sy))) / r;
+				ax = ax + ((a*((tmp->sx) - (pt->sx))) / r);
+				ay = ay + ((a*((tmp->sy) - (pt->sy))) / r);
+				//EnterCriticalSection(&CS);
 				tmp = tmp->next;
+				//LeaveCriticalSection(&CS);
 			}
 			time2 = clock();
 			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-			pt->vx = pt->vx + ax * 10;
-			pt->vy = pt->vy + ay * 10;
-			pt->sx = pt->sx + pt->vx * 10;
-			pt->sy = pt->sy + pt->vy * 10;
+			pt->vx = pt->vx + (ax * 10);
+			pt->vy = pt->vy + (ay * 10);
+			pt->sx = pt->sx + (pt->vx * 10);
+			pt->sy = pt->sy + (pt->vy * 10);
 			time = clock();
-			Sleep(2);
+			
 		}
+		else
+		{
+			tmp = pt->next;
+		}
+		Sleep(10);
 	}
 }
 void createPlanet(planet_type* pt)
@@ -286,13 +297,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
 
 		/* here we draw a simple sinus curve in the window    */
+		tmp = NULL;
 		while (TRUE)
 		{
-			if (head != NULL)
+			if (tmp != NULL)
 			{
-				tmp = head;
-				if (tmp->next != NULL)
-				{
 					posX = (int)tmp->sx;
 					posY = (int)tmp->sy;
 
@@ -309,8 +318,16 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 					SetPixel(hDC, posX, posY, (COLORREF)color);
 					color += 1;
 					windowRefreshTimer(hWnd, UPDATE_FREQ);
-					tmp = tmp->next;
-				}
+					if (tmp->next != NULL)
+					{
+						//EnterCriticalSection(&CS);
+						tmp = tmp->next;
+						//LeaveCriticalSection(&CS);
+					}
+			}
+			if(tmp == NULL || head == NULL)
+			{
+				tmp = head;
 			}
 			
 		}
@@ -350,7 +367,3 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	}
 	return 0;
 }
-
-
-
-
