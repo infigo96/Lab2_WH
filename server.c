@@ -64,7 +64,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-	InitializeCriticalSection(&CS);
+	
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -191,29 +191,43 @@ void Planet(planet_type* pt)
 		(pt->life)--;
 		if (pt->life <= 0)
 		{
+			InitializeCriticalSection(&CS);
 			if (pt->next == NULL)
 			{
-				//free(pt);
-				pt = NULL;
+				
 				head = NULL;
+				Sleep(1000);
+				EnterCriticalSection(&CS);
+				free(pt);
+				pt = NULL;
+				LeaveCriticalSection(&CS);
+				DeleteCriticalSection(&CS);
 				return;
 			}
 			else if (pt->next != NULL) {
 				EnterCriticalSection(&CS);
-				pt->mass = 0;
-				//pt = pt->next;
+				while (tmp->next != pt)
+				{
+					tmp = tmp->next;
+				}
+				tmp->next = pt->next;
+				Sleep(1000);
+				free(pt);
+				DeleteCriticalSection(&CS);
 				LeaveCriticalSection(&CS);
+				return;
 			}
 
 		}
+		TryEnterCriticalSection(&CS);
 		if (tmp != NULL)
 		{
 			while (tmp != pt)
 			{
 				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-				a = (GRAV*(tmp->mass)) / pow(r, 2);
-				ax = ax + ((a*((tmp->sx) - (pt->sx))) / r);
-				ay = ay + ((a*((tmp->sy) - (pt->sy))) / r);
+				a = (GRAV*(tmp->mass)) / pow(r, 3);
+				ax = ax + (a*((tmp->sx) - (pt->sx)));
+				ay = ay + (a*((tmp->sy) - (pt->sy)));
 				//EnterCriticalSection(&CS);
 				tmp = tmp->next;
 				//LeaveCriticalSection(&CS);
@@ -225,13 +239,18 @@ void Planet(planet_type* pt)
 			pt->sx = pt->sx + (pt->vx * 10);
 			pt->sy = pt->sy + (pt->vy * 10);
 			time = clock();
-			
+			//EnterCriticalSection(&CS);
+			tmp = pt->next;
+			//LeaveCriticalSection(&CS);
 		}
 		else
 		{
+			//EnterCriticalSection(&CS);
 			tmp = pt->next;
+			//LeaveCriticalSection(&CS);
 		}
-		Sleep(10);
+		LeaveCriticalSection(&CS);
+		Sleep(3);
 	}
 }
 void createPlanet(planet_type* pt)
@@ -300,6 +319,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		tmp = NULL;
 		while (TRUE)
 		{
+			TryEnterCriticalSection(&CS);
 			if (tmp != NULL)
 			{
 					posX = (int)tmp->sx;
@@ -325,11 +345,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 						//LeaveCriticalSection(&CS);
 					}
 			}
-			if(tmp == NULL || head == NULL)
+			if(head == NULL || head->next == NULL)
 			{
 				tmp = head;
 			}
-			
+			LeaveCriticalSection(&CS);
 		}
 
 		/****************************************************************\
