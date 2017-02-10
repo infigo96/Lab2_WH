@@ -87,7 +87,7 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 
-		pt->life = 10000000000;
+		pt->life = 2000;
 		
 		do
 		{
