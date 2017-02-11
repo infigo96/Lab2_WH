@@ -87,7 +87,14 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 
-		pt->life = 4000;
+		//pt->life = 4000;
+		do
+		{
+			printf("enter the expected life of %s in seconds\n", pt->name);
+			input(MESSAGE);
+			sort_number(MESSAGE);
+			pt->life = 250*atoi(MESSAGE);
+		} while (pt->life <= 0);
 		
 		do
 		{
