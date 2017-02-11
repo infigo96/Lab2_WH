@@ -12,6 +12,23 @@
 #include <windows.h>
 #include <string.h>
 #include "wrapper.h"
+
+void mailThread(char* pid)
+{
+	int bytesRead;
+	HANDLE mailbox = mailslotCreate(pid);
+	char* MESSAGE;
+	for (;;)
+	{
+		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
+		if (bytesRead != -1)
+		{
+			MESSAGE = malloc(bytesRead);
+			mailslotRead(mailbox, MESSAGE, bytesRead);
+			printf("Your planet is dead %s", MESSAGE);
+		}
+	}
+}
 void sort_number(char *input)
 {
 	int i, j = 0;
@@ -52,7 +69,9 @@ void input(char* msg)
 	}
 }
 void main(void) {
-
+	DWORD pid = GetCurrentProcessId();
+	//char pid[30];
+	
 	HANDLE mailSlot = INVALID_HANDLE_VALUE;
 	DWORD bytesWritten;
 	int i = 0, length;
@@ -67,6 +86,11 @@ void main(void) {
 	}
 	planet_type* pt = malloc(sizeof(planet_type));
 	char* MESSAGE = malloc(1024);
+
+
+	sprintf(pt->pid, "%d", pid);
+	threadCreate((LPTHREAD_START_ROUTINE)mailThread, pt->pid);
+
 	while (TRUE)
 	{
 		i = 0;
@@ -87,6 +111,7 @@ void main(void) {
 			pt->name[length] = '\0';
 		}
 
+
 		//pt->life = 4000;
 		do
 		{
@@ -106,7 +131,6 @@ void main(void) {
 		} while (pt->mass < 0);
 
 		pt->next = NULL;
-		*pt->pid = NULL;
 
 		do
 		{

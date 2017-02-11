@@ -185,6 +185,8 @@ void Planet(planet_type* pt)
 
 	while (pt->life > 0)
 	{
+		HANDLE mailbox = INVALID_HANDLE_VALUE;
+		char hej[30];
 		ax = 0;
 		a = 0;
 		ay = 0;
@@ -192,10 +194,18 @@ void Planet(planet_type* pt)
 		if (pt->life <= 0)
 		{
 			//InitializeCriticalSection(&CS);
+			strcat(hej, pt->pid);
+			do
+			{
+				mailbox = mailslotConnect(pt->pid);
+			} while (mailbox == INVALID_HANDLE_VALUE);
+
 			if (pt->next == NULL)
 			{
 
 				head = NULL;
+				mailslotWrite(mailbox, "Fucktard", 9);
+				mailslotClose(mailbox);
 				Sleep(4000);
 				//EnterCriticalSection(&CS);
 				free(pt);
@@ -225,6 +235,8 @@ void Planet(planet_type* pt)
 					}
 				}
 				//EnterCriticalSection(&CS);
+				mailslotWrite(mailbox, "Fucktard", 9);
+				mailslotClose(mailbox);
 				Sleep(4000);
 				free(pt);
 				//LeaveCriticalSection(&CS);
