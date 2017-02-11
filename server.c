@@ -64,7 +64,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-	
+
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -125,25 +125,25 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 
 	mailbox = mailslotCreate("mailbox");
-	
+
 	for (;;) {
 
-			/* (ordinary file manipulating functions are used to read from mailslots) */
-			/* in this example the server receives strings from the client side and   */
-			/* displays them in the presentation window                               */
-			/* NOTE: binary data can also be sent and received, e.g. planet structures*/
+		/* (ordinary file manipulating functions are used to read from mailslots) */
+		/* in this example the server receives strings from the client side and   */
+		/* displays them in the presentation window                               */
+		/* NOTE: binary data can also be sent and received, e.g. planet structures*/
 
-		
+
 		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
-		
 
-		if (bytesRead != -1) 
+
+		if (bytesRead != -1)
 		{
 			tmp = malloc(sizeof(planet_type));
 			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
 			createPlanet(tmp);
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
-			
+
 			/*planet_type* pt = malloc(sizeof(planet_type));
 			pt->name[0] = 'H';
 			pt->name[1] = 'e';
@@ -160,12 +160,12 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			createPlanet(pt);
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);^*/
 
-				/* NOTE: It is appropriate to replace this code with something */
-				/*       that match your needs here.                           */
-			//posY++;
-				/* (hDC is used reference the previously created window) */
-			//bytesRead = strlen(tmp->name)+1;
-			//TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
+			/* NOTE: It is appropriate to replace this code with something */
+			/*       that match your needs here.                           */
+		//posY++;
+			/* (hDC is used reference the previously created window) */
+		//bytesRead = strlen(tmp->name)+1;
+		//TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
 		}
 		else {
 			/* failed reading from mailslot                              */
@@ -177,79 +177,92 @@ DWORD WINAPI mailThread(LPVOID arg) {
 }
 void Planet(planet_type* pt)
 {
-		planet_type* tmp = pt->next;
-		planet_type* tmp2;
+	planet_type* tmp = pt->next;
+	planet_type* tmp2;
 
-		double total_time, a = 0, ax = 0, ay = 0, r = 0;
-		clock_t time2, time = clock();
+	double total_time, a = 0, ax = 0, ay = 0, r = 0;
+	clock_t time2, time = clock();
 
 	while (pt->life > 0)
 	{
 		ax = 0;
-		a = 0; 
+		a = 0;
 		ay = 0;
 		(pt->life)--;
 		if (pt->life <= 0)
 		{
-			InitializeCriticalSection(&CS);
+			//InitializeCriticalSection(&CS);
 			if (pt->next == NULL)
 			{
-				
+
 				head = NULL;
-				Sleep(1000);
-				EnterCriticalSection(&CS);
+				Sleep(4000);
+				//EnterCriticalSection(&CS);
 				free(pt);
 				pt = NULL;
-				LeaveCriticalSection(&CS);
-				DeleteCriticalSection(&CS);
+				//LeaveCriticalSection(&CS);
+				//DeleteCriticalSection(&CS);
 				return;
 			}
 			else if (pt->next != NULL) {
-				EnterCriticalSection(&CS);
+
 				while (tmp->next != pt)
 				{
 					tmp = tmp->next;
 				}
-				tmp->next = pt->next;
-				Sleep(1000);
+				if (pt->next == tmp)
+				{
+					tmp->next = NULL;
+					head = tmp;
+				}
+				else
+				{
+
+					tmp->next = pt->next;
+					if (head == pt)
+					{
+						head = tmp->next;
+					}
+				}
+				//EnterCriticalSection(&CS);
+				Sleep(4000);
 				free(pt);
-				DeleteCriticalSection(&CS);
-				LeaveCriticalSection(&CS);
+				//LeaveCriticalSection(&CS);
+				//DeleteCriticalSection(&CS);
 				return;
 			}
 
 		}
-		TryEnterCriticalSection(&CS);
-		if (tmp != NULL)
+		//TryEnterCriticalSection(&CS);
+
+		while (tmp != NULL && tmp != pt)
 		{
-			while (tmp != pt)
-			{
-				r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-				a = (GRAV*(tmp->mass)) / pow(r, 3);
-				ax = ax + (a*((tmp->sx) - (pt->sx)));
-				ay = ay + (a*((tmp->sy) - (pt->sy)));
-				//EnterCriticalSection(&CS);
-				tmp = tmp->next;
-				//LeaveCriticalSection(&CS);
-			}
-			time2 = clock();
-			total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-			pt->vx = pt->vx + (ax * 10);
-			pt->vy = pt->vy + (ay * 10);
-			pt->sx = pt->sx + (pt->vx * 10);
-			pt->sy = pt->sy + (pt->vy * 10);
-			time = clock();
+			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
+			a = (GRAV*(tmp->mass)) / pow(r, 3);
+			ax = ax + (a*((tmp->sx) - (pt->sx)));
+			ay = ay + (a*((tmp->sy) - (pt->sy)));
+			//EnterCriticalSection(&CS);
+			tmp = tmp->next;
+			//LeaveCriticalSection(&CS);
+		}
+		time2 = clock();
+		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
+		pt->vx = pt->vx + (ax * 10);
+		pt->vy = pt->vy + (ay * 10);
+		pt->sx = pt->sx + (pt->vx * 10);
+		pt->sy = pt->sy + (pt->vy * 10);
+		time = clock();
+		//EnterCriticalSection(&CS);
+		tmp = pt->next;
+		//LeaveCriticalSection(&CS);
+
+		if (tmp == NULL)
+		{
 			//EnterCriticalSection(&CS);
 			tmp = pt->next;
 			//LeaveCriticalSection(&CS);
 		}
-		else
-		{
-			//EnterCriticalSection(&CS);
-			tmp = pt->next;
-			//LeaveCriticalSection(&CS);
-		}
-		LeaveCriticalSection(&CS);
+		//LeaveCriticalSection(&CS);
 		Sleep(3);
 	}
 }
@@ -295,7 +308,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	int posY;
 	HANDLE context;
 	static DWORD color = 0;
-
+	int blub = 0;
 	planet_type* pt = NULL;
 	planet_type* tmp = NULL;
 
@@ -319,37 +332,41 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		tmp = NULL;
 		while (TRUE)
 		{
-			TryEnterCriticalSection(&CS);
+			//TryEnterCriticalSection(&CS);
 			if (tmp != NULL)
 			{
-					posX = (int)tmp->sx;
-					posY = (int)tmp->sy;
+				/*if (tmp->life < 10)
+				{
+					blub++;
+				}*/
+				posX = (int)tmp->sx;
+				posY = (int)tmp->sy;
 
-					int posX1 = posX - 1;
-					int posX2 = posX + 1;
-					int posY1 = posY - 1;
-					int posY2 = posY + 1;
-					SetPixel(hDC, posX, posY, (COLORREF)color);
-					SetPixel(hDC, posX1, posY, (COLORREF)color);
-					SetPixel(hDC, posX2, posY, (COLORREF)color);
-					SetPixel(hDC, posX, posY1, (COLORREF)color);
-					SetPixel(hDC, posX, posY2, (COLORREF)color);
+				int posX1 = posX - 1;
+				int posX2 = posX + 1;
+				int posY1 = posY - 1;
+				int posY2 = posY + 1;
+				SetPixel(hDC, posX, posY, (COLORREF)color);
+				SetPixel(hDC, posX1, posY, (COLORREF)color);
+				SetPixel(hDC, posX2, posY, (COLORREF)color);
+				SetPixel(hDC, posX, posY1, (COLORREF)color);
+				SetPixel(hDC, posX, posY2, (COLORREF)color);
 
-					SetPixel(hDC, posX, posY, (COLORREF)color);
-					color += 1;
-					windowRefreshTimer(hWnd, UPDATE_FREQ);
-					if (tmp->next != NULL)
-					{
-						//EnterCriticalSection(&CS);
-						tmp = tmp->next;
-						//LeaveCriticalSection(&CS);
-					}
+				SetPixel(hDC, posX, posY, (COLORREF)color);
+				color += 1;
+				windowRefreshTimer(hWnd, UPDATE_FREQ);
+				if (tmp->next != NULL)
+				{
+					//EnterCriticalSection(&CS);
+					tmp = tmp->next;
+					//LeaveCriticalSection(&CS);
+				}
 			}
-			if(head == NULL || head->next == NULL)
+			if (head == NULL || head->next == NULL)
 			{
 				tmp = head;
 			}
-			LeaveCriticalSection(&CS);
+			//LeaveCriticalSection(&CS);
 		}
 
 		/****************************************************************\
