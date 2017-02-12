@@ -179,22 +179,38 @@ void Planet(planet_type* pt)
 {
 	planet_type* tmp = pt->next;
 	planet_type* tmp2;
-
-	double total_time, a = 0, ax = 0, ay = 0, r = 0;
+	char message[256] = "Your planet ";
+	strcat(message, pt->name);
+	
+	double total_time, a = 0, ax = 0, ay = 0, r = 1000;
 	clock_t time2, time = clock();
 
 	while (pt->life > 0)
 	{
 		HANDLE mailbox = INVALID_HANDLE_VALUE;
-		char hej[30];
+		
 		ax = 0;
 		a = 0;
 		ay = 0;
 		(pt->life)--;
+		if (pt->sx < 0 || pt->sx > 800 || pt->sy < 0 || pt->sy > 600)
+		{
+			pt->life = 0; 
+			strcat(message, " died by going out of bounds\n");
+		}
+		else if (r < 3)
+		{
+			pt->life = 0; 
+			strcat(message, " died by colliding with another planet\n");
+		}
+		else if(pt->life <= 0)
+		{
+			strcat(message, " died because life went to 0\n");
+		}
+		
 		if (pt->life <= 0)
 		{
 			//InitializeCriticalSection(&CS);
-			strcat(hej, pt->pid);
 			do
 			{
 				mailbox = mailslotConnect(pt->pid);
@@ -204,7 +220,7 @@ void Planet(planet_type* pt)
 			{
 
 				head = NULL;
-				mailslotWrite(mailbox, "Fucktard", 9);
+				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
 				Sleep(4000);
 				//EnterCriticalSection(&CS);
@@ -235,7 +251,7 @@ void Planet(planet_type* pt)
 					}
 				}
 				//EnterCriticalSection(&CS);
-				mailslotWrite(mailbox, "Fucktard", 9);
+				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
 				Sleep(4000);
 				free(pt);
