@@ -21,10 +21,10 @@ void mailThread(char* pid)
 	for (;;)
 	{
 		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
-		if (bytesRead != -1)
+		if (bytesRead != -1)		//Run if there is a meesage inte hte mailbox
 		{
 			MESSAGE = malloc(bytesRead);
-			mailslotRead(mailbox, MESSAGE, bytesRead);
+			mailslotRead(mailbox, MESSAGE, bytesRead);		//read and print the message
 			printf("%s", MESSAGE);
 		}
 	}
@@ -33,7 +33,7 @@ void sort_number(char *input)
 {
 	int i, j = 0;
 
-	for (i = 0; i < 10 && input[i] != '\0'; i++)		//removes all non numbers exept '.' and '-'
+	for (i = 0; i < 10 && input[i] != '\0'; i++)		//removes all non numbers exept '.' and '-' for use with atoi or atof later
 	{
 		if (isdigit(input[i]) != 0 || input[i] == '.' || input[i] == '-')
 		{
@@ -44,8 +44,8 @@ void sort_number(char *input)
 	
 	input[j] = '\0';
 }
-//#define MESSAGE "Hello! Fucktard"
-void input(char* msg)
+
+void input(char* msg)		//my input function from user
 {
 	char dummy;
 
@@ -71,7 +71,7 @@ void main(void) {
 	HANDLE mailSlot = INVALID_HANDLE_VALUE;
 	DWORD bytesWritten;
 	int i = 0, length;
-	while (mailSlot == INVALID_HANDLE_VALUE)
+	while (mailSlot == INVALID_HANDLE_VALUE)		//Run until we can connect to the server mailbox
 	{
 		Sleep(100);
 		mailSlot = mailslotConnect("mailbox");
@@ -85,14 +85,14 @@ void main(void) {
 
 
 	sprintf(pt->pid, "%d", pid);
-	threadCreate((LPTHREAD_START_ROUTINE)mailThread, pt->pid);
+	threadCreate((LPTHREAD_START_ROUTINE)mailThread, pt->pid);		//mailthread
 
 	while (TRUE)
 	{
 		i = 0;
 		do
 		{
-			printf("What is the planets name?\n");
+			printf("What is the planets name?\n");			//name of the new planet
 			input(MESSAGE);
 			length = strlen(MESSAGE);
 		} while (length > 20 || length <= 0);
@@ -111,7 +111,7 @@ void main(void) {
 		//pt->life = 4000;
 		do
 		{
-			printf("enter the expected life of %s in seconds\n", pt->name);
+			printf("enter the expected life of %s in seconds\n", pt->name);		//life expecancy of the new planet
 			input(MESSAGE);
 			sort_number(MESSAGE);
 			pt->life = 250*atoi(MESSAGE);
@@ -119,7 +119,7 @@ void main(void) {
 		
 		do
 		{
-			printf("enter the mass of %s\n", pt->name);
+			printf("enter the mass of %s\n", pt->name);			//mass
 			input(MESSAGE);
 			sort_number(MESSAGE);
 			pt->mass = atof(MESSAGE);
@@ -130,7 +130,7 @@ void main(void) {
 
 		do
 		{
-			printf("enter the x-position of %s\n", pt->name);
+			printf("enter the x-position of %s\n", pt->name);		//x-position
 			input(MESSAGE);
 			sort_number(MESSAGE);
 			pt->sx = atof(MESSAGE);
@@ -139,27 +139,27 @@ void main(void) {
 		
 		do
 		{
-			printf("enter the y-position of %s\n", pt->name);
+			printf("enter the y-position of %s\n", pt->name);		//y-position
 			input(MESSAGE);
 			sort_number(MESSAGE);
 			pt->sy = atof(MESSAGE);
 		} while (pt->sy < 0 || pt->sy >600);
 
 		
-		printf("enter the x-speed of %s\n", pt->name);
+		printf("enter the x-speed of %s\n", pt->name);		//x-speed
 		input(MESSAGE);
 		sort_number(MESSAGE);
 		pt->vx = atof(MESSAGE);
 		
 		
-		printf("enter the y-speed of %s\n", pt->name);
+		printf("enter the y-speed of %s\n", pt->name);		//y-speed
 		input(MESSAGE);
 		sort_number(MESSAGE);
 		pt->vy = atof(MESSAGE);
 		
 
 
-		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));
+		bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
 		if (bytesWritten != -1)
 			printf("data sent to server (bytes = %d)\n", bytesWritten);
 		else
