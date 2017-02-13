@@ -140,25 +140,10 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		if (bytesRead != -1)
 		{
 			tmp = malloc(sizeof(planet_type));
-			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));
-			createPlanet(tmp);
+			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type)); //Gets struct with info about planet from the client by mailbox
+			createPlanet(tmp);												
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
 
-			/*planet_type* pt = malloc(sizeof(planet_type));
-			pt->name[0] = 'H';
-			pt->name[1] = 'e';
-			pt->name[2] = 'j';
-			pt->name[3] = '\0';
-			pt->life = 1000000;
-			pt->mass = 1000.0;
-			pt->next = NULL;
-			*pt->pid = NULL;
-			pt->sx = 200.0;
-			pt->sy = 300.0;
-			pt->vx = 0.0;
-			pt->vy = 0.008;
-			createPlanet(pt);
-			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);^*/
 
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
@@ -363,12 +348,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			//TryEnterCriticalSection(&CS);
 			if (tmp != NULL)
 			{
-				/*if (tmp->life < 10)
-				{
-					blub++;
-				}*/
+				
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
+
+				/*Instead of one pixel, the planet is a cross made out of 5 pixels*/
 
 				int posX1 = posX - 1;
 				int posX2 = posX + 1;
@@ -381,7 +365,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				SetPixel(hDC, posX, posY2, (COLORREF)color);
 
 				SetPixel(hDC, posX, posY, (COLORREF)color);
-				color += 1;
+				color += 1;										//Color changes with each calculation to show speed of planet better
 				windowRefreshTimer(hWnd, UPDATE_FREQ);
 				if (tmp->next != NULL)
 				{
