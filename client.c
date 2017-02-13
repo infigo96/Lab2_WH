@@ -25,7 +25,7 @@ void mailThread(char* pid)
 		{
 			MESSAGE = malloc(bytesRead);
 			mailslotRead(mailbox, MESSAGE, bytesRead);
-			printf("Your planet is dead %s", MESSAGE);
+			printf("%s", MESSAGE);
 		}
 	}
 }
@@ -41,11 +41,7 @@ void sort_number(char *input)
 			j++;
 		}
 	}
-	/*if (isdigit(input[0]) != 0)
-	{
-		input[0] == '0';
-		j = 1;
-	}*/
+	
 	input[j] = '\0';
 }
 //#define MESSAGE "Hello! Fucktard"

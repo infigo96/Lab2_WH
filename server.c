@@ -144,21 +144,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			createPlanet(tmp);
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
 
-			/*planet_type* pt = malloc(sizeof(planet_type));
-			pt->name[0] = 'H';
-			pt->name[1] = 'e';
-			pt->name[2] = 'j';
-			pt->name[3] = '\0';
-			pt->life = 1000000;
-			pt->mass = 1000.0;
-			pt->next = NULL;
-			*pt->pid = NULL;
-			pt->sx = 200.0;
-			pt->sy = 300.0;
-			pt->vx = 0.0;
-			pt->vy = 0.008;
-			createPlanet(pt);
-			threadCreate((LPTHREAD_START_ROUTINE)Planet, pt);^*/
+			
 
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
@@ -363,10 +349,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			//TryEnterCriticalSection(&CS);
 			if (tmp != NULL)
 			{
-				/*if (tmp->life < 10)
-				{
-					blub++;
-				}*/
+				
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
 
