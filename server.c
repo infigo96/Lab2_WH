@@ -140,11 +140,12 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		if (bytesRead != -1)
 		{
 			tmp = malloc(sizeof(planet_type));
-			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type)); //Gets struct with info about planet from the client by mailbox
-			createPlanet(tmp);												
-			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);
 
+			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));		//read the new planet from the client
+			createPlanet(tmp);													//Put it in the database by "creating it"
+			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
 
+			
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
 		//posY++;
@@ -178,55 +179,55 @@ void Planet(planet_type* pt)
 		a = 0;
 		ay = 0;
 		(pt->life)--;
-		if (pt->sx < 0 || pt->sx > 800 || pt->sy < 0 || pt->sy > 600)
+		if (pt->sx < 0 || pt->sx > 800 || pt->sy < 0 || pt->sy > 600)			//if the planet goes out of bounds it dies 
 		{
 			pt->life = 0; 
 			strcat(message, " died by going out of bounds\n");
 		}
-		else if (r < 3)
+		else if (r < 3)			//if the planet "collides" by going to close to another planet it dies
 		{
 			pt->life = 0; 
 			strcat(message, " died by colliding with another planet\n");
 		}
-		else if(pt->life <= 0)
+		else if(pt->life <= 0)		//if life is 0 it dies 
 		{
 			strcat(message, " died because life went to 0\n");
 		}
 		
-		if (pt->life <= 0)
+		if (pt->life <= 0)		//handeling of the death
 		{
-			//InitializeCriticalSection(&CS);
+			
 			do
 			{
 				mailbox = mailslotConnect(pt->pid);
 			} while (mailbox == INVALID_HANDLE_VALUE);
 
-			if (pt->next == NULL)
+			if (pt->next == NULL)		//if the planet is alone in the database
 			{
 
 				head = NULL;
 				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
-				Sleep(4000);
-				//EnterCriticalSection(&CS);
+				Sleep(4000);			//wait is the best medicine, CS won�t work well
+				
 				free(pt);
 				pt = NULL;
-				//LeaveCriticalSection(&CS);
-				//DeleteCriticalSection(&CS);
+				
 				return;
 			}
-			else if (pt->next != NULL) {
+			else if (pt->next != NULL) //if there is more than one planet in the database
+			{
 
-				while (tmp->next != pt)
+				while (tmp->next != pt)		//goes until we are on the one before our pt
 				{
 					tmp = tmp->next;
 				}
-				if (pt->next == tmp)
+				if (pt->next == tmp)		//if the one after the pt is the one before, aka iff there is 2 planets in the database 
 				{
 					tmp->next = NULL;
 					head = tmp;
 				}
-				else
+				else						//more than two planets in the database
 				{
 
 					tmp->next = pt->next;
@@ -235,63 +236,61 @@ void Planet(planet_type* pt)
 						head = tmp->next;
 					}
 				}
-				//EnterCriticalSection(&CS);
+				
 				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
 				Sleep(4000);
 				free(pt);
-				//LeaveCriticalSection(&CS);
-				//DeleteCriticalSection(&CS);
+				
 				return;
 			}
 
 		}
-		//TryEnterCriticalSection(&CS);
+		
 
 		while (tmp != NULL && tmp != pt)
 		{
-			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));
-			a = (GRAV*(tmp->mass)) / pow(r, 3);
+			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));		//radie between planets
+			a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
 			ax = ax + (a*((tmp->sx) - (pt->sx)));
 			ay = ay + (a*((tmp->sy) - (pt->sy)));
-			//EnterCriticalSection(&CS);
+			
 			tmp = tmp->next;
-			//LeaveCriticalSection(&CS);
+			
 		}
 		time2 = clock();
 		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
-		pt->vx = pt->vx + (ax * 10);
+		pt->vx = pt->vx + (ax * 10);		//new velocity...
 		pt->vy = pt->vy + (ay * 10);
 		pt->sx = pt->sx + (pt->vx * 10);
 		pt->sy = pt->sy + (pt->vy * 10);
 		time = clock();
-		//EnterCriticalSection(&CS);
+		
 		tmp = pt->next;
-		//LeaveCriticalSection(&CS);
+		
 
 		if (tmp == NULL)
 		{
-			//EnterCriticalSection(&CS);
+			
 			tmp = pt->next;
-			//LeaveCriticalSection(&CS);
 		}
-		//LeaveCriticalSection(&CS);
+		
 		Sleep(3);
 	}
 }
 void createPlanet(planet_type* pt)
 {
-	if (head == NULL)
+	if (head == NULL)		//if the database is empty
 	{
 		head = pt;
 		(head)->next = NULL;
 	}
-	else if ((head)->next == NULL)
+	else if ((head)->next == NULL)		//if there is only one planet in the database
 	{
 		pt->next = head;
 		(head)->next = pt;
 	}
-	else if ((head)->next != NULL)
+	else if ((head)->next != NULL)		//more than two planets in the database
 	{
 		pt->next = (head)->next;
 		(head)->next = pt;
@@ -369,16 +368,16 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				windowRefreshTimer(hWnd, UPDATE_FREQ);
 				if (tmp->next != NULL)
 				{
-					//EnterCriticalSection(&CS);
+					
 					tmp = tmp->next;
-					//LeaveCriticalSection(&CS);
+					
 				}
 			}
 			if (head == NULL || head->next == NULL)
 			{
 				tmp = head;
 			}
-			//LeaveCriticalSection(&CS);
+			
 		}
 
 		/****************************************************************\
