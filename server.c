@@ -140,12 +140,12 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		if (bytesRead != -1)
 		{
 			tmp = malloc(sizeof(planet_type));
+
 			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));		//read the new planet from the client
 			createPlanet(tmp);													//Put it in the database by "creating it"
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
 
 			
-
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
 		//posY++;
@@ -208,7 +208,7 @@ void Planet(planet_type* pt)
 				head = NULL;
 				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
-				Sleep(4000);			//wait is the best medicine, CS won´t work well
+				Sleep(4000);			//wait is the best medicine, CS wonï¿½t work well
 				
 				free(pt);
 				pt = NULL;
@@ -351,6 +351,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
 
+				/*Instead of one pixel, the planet is a cross made out of 5 pixels*/
+
 				int posX1 = posX - 1;
 				int posX2 = posX + 1;
 				int posY1 = posY - 1;
@@ -362,7 +364,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				SetPixel(hDC, posX, posY2, (COLORREF)color);
 
 				SetPixel(hDC, posX, posY, (COLORREF)color);
-				color += 1;
+				color += 1;										//Color changes with each calculation to show speed of planet better
 				windowRefreshTimer(hWnd, UPDATE_FREQ);
 				if (tmp->next != NULL)
 				{
