@@ -64,7 +64,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-
+	InitializeCriticalSection(&CS);
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -196,7 +196,7 @@ void Planet(planet_type* pt)
 		
 		if (pt->life <= 0)		//handeling of the death
 		{
-			
+			EnterCriticalSection(&CS);
 			do
 			{
 				mailbox = mailslotConnect(pt->pid);
@@ -208,11 +208,11 @@ void Planet(planet_type* pt)
 				head = NULL;
 				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
-				Sleep(4000);			//wait is the best medicine, CS won�t work well
+				//Sleep(4000);			//wait is the best medicine, CS won�t work well
 				
 				free(pt);
 				pt = NULL;
-				
+				LeaveCriticalSection(&CS);
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
@@ -239,17 +239,23 @@ void Planet(planet_type* pt)
 				
 				mailslotWrite(mailbox, message, strlen(message)+1);
 				mailslotClose(mailbox);
-				Sleep(4000);
+				//Sleep(4000);
 				free(pt);
-				
+				LeaveCriticalSection(&CS);
 				return;
 			}
 
 		}
-		
-
+		//WaitForSingleObject()
+		EnterCriticalSection(&CS);
+		tmp = pt->next;
+		if (tmp == NULL)
+		{
+			tmp = pt->next;
+		}
 		while (tmp != NULL && tmp != pt)
 		{
+			
 			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));		//radie between planets
 			a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
 			ax = ax + (a*((tmp->sx) - (pt->sx)));
@@ -258,6 +264,7 @@ void Planet(planet_type* pt)
 			tmp = tmp->next;
 			
 		}
+		
 		time2 = clock();
 		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
 		pt->vx = pt->vx + (ax * 10);		//new velocity...
@@ -266,15 +273,8 @@ void Planet(planet_type* pt)
 		pt->sy = pt->sy + (pt->vy * 10);
 		time = clock();
 		
-		tmp = pt->next;
 		
-
-		if (tmp == NULL)
-		{
-			
-			tmp = pt->next;
-		}
-		
+		LeaveCriticalSection(&CS);
 		Sleep(3);
 	}
 }
@@ -344,7 +344,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		tmp = NULL;
 		while (TRUE)
 		{
-			//TryEnterCriticalSection(&CS);
+			Sleep(1);
+			EnterCriticalSection(&CS);
 			if (tmp != NULL)
 			{
 				
@@ -372,12 +373,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 					tmp = tmp->next;
 					
 				}
+				
 			}
 			if (head == NULL || head->next == NULL)
 			{
 				tmp = head;
 			}
-			
+			LeaveCriticalSection(&CS);
 		}
 
 		/****************************************************************\
