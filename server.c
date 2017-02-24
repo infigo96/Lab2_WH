@@ -43,6 +43,7 @@ DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
 void Planet(planet_type* pt);
 CRITICAL_SECTION CS;
+HANDLE MySemaphore;
 
 
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
