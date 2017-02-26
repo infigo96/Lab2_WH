@@ -43,7 +43,7 @@ DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
 void Planet(planet_type* pt);
 CRITICAL_SECTION CS;
-HANDLE MySemaphore;
+HANDLE MySemaphore = NULL;
 
 
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
@@ -138,7 +138,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
 
 
-		if (bytesRead != -1)
+		if (bytesRead != -1 && MySemaphore == NULL)
 		{
 			tmp = malloc(sizeof(planet_type));
 
@@ -164,6 +164,8 @@ DWORD WINAPI mailThread(LPVOID arg) {
 }
 void Planet(planet_type* pt)
 {
+	BOOL Waited = FALSE;
+	BOOL ResetSemaphore = FALSE;
 	planet_type* tmp = pt->next;
 	planet_type* tmp2;
 	char message[256] = "Your planet ";
@@ -195,9 +197,10 @@ void Planet(planet_type* pt)
 			strcat(message, " died because life went to 0\n");
 		}
 		
-		if (pt->life <= 0)		//handeling of the death
+		if (pt->life <= 0 && MySemaphore == NULL)		//handeling of the death
 		{
 			EnterCriticalSection(&CS);
+			
 			do
 			{
 				mailbox = mailslotConnect(pt->pid);
@@ -213,7 +216,7 @@ void Planet(planet_type* pt)
 				
 				free(pt);
 				pt = NULL;
-				LeaveCriticalSection(&CS);
+				//LeaveCriticalSection(&CS);
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
@@ -242,13 +245,24 @@ void Planet(planet_type* pt)
 				mailslotClose(mailbox);
 				//Sleep(4000);
 				free(pt);
-				LeaveCriticalSection(&CS);
+				//LeaveCriticalSection(&CS);
 				return;
 			}
 
 		}
 		//WaitForSingleObject()
-		EnterCriticalSection(&CS);
+		//EnterCriticalSection(&CS);
+		if (MySemaphore != NULL && Waited == FALSE)
+		{
+			WaitForSingleObject(MySemaphore, 0);
+			Waited = TRUE;
+		}
+		else if (MySemaphore == NULL && (Waited == TRUE || ResetSemaphore == TRUE))
+		{
+			Waited = FALSE;
+			ResetSemaphore == FALSE;
+		}
+
 		tmp = pt->next;
 		if (tmp == NULL)
 		{
@@ -274,8 +288,12 @@ void Planet(planet_type* pt)
 		pt->sy = pt->sy + (pt->vy * 10);
 		time = clock();
 		
-		
-		LeaveCriticalSection(&CS);
+		if (MySemaphore != NULL && ResetSemaphore == FALSE)
+		{
+			ReleaseSemaphore(MySemaphore, 1, NULL);
+			ResetSemaphore = TRUE;
+		}
+		//LeaveCriticalSection(&CS);
 		Sleep(3);
 	}
 }
@@ -324,6 +342,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	int blub = 0;
 	planet_type* pt = NULL;
 	planet_type* tmp = NULL;
+	BOOL Waited = FALSE;
+	BOOL ResetSemaphore = FALSE;
 
 	switch (msg) {
 		/**************************************************************/
@@ -345,8 +365,18 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		tmp = NULL;
 		while (TRUE)
 		{
-			Sleep(1);
-			EnterCriticalSection(&CS);
+			//Sleep(1);
+			//EnterCriticalSection(&CS);
+			if (MySemaphore != NULL && Waited == FALSE)
+			{
+				WaitForSingleObject(MySemaphore, 0);
+				Waited = TRUE; 
+			}
+			else if (MySemaphore == NULL && (Waited == TRUE || ResetSemaphore == TRUE))
+			{
+				Waited = FALSE;
+				ResetSemaphore == FALSE;
+			}
 			if (tmp != NULL)
 			{
 				
@@ -380,7 +410,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			{
 				tmp = head;
 			}
-			LeaveCriticalSection(&CS);
+			if (MySemaphore != NULL && ResetSemaphore == FALSE)
+			{
+				ReleaseSemaphore(MySemaphore, 1, NULL);
+				ResetSemaphore = TRUE;
+			}
+			//LeaveCriticalSection(&CS);
 		}
 
 		/****************************************************************\
