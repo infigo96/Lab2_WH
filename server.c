@@ -172,7 +172,6 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		}
 		if (MySemaphore != NULL && ResetSemaphore == FALSE)
 		{
-			Sleep(2000);
 			ReleaseSemaphore(MySemaphore, 1, &count);
 			ResetSemaphore = TRUE;
 			fucktard++;
@@ -224,7 +223,7 @@ void Planet(planet_type* pt)
 			MySemaphore = CreateSemaphore(
 				NULL,           // default security attributes
 				1,  // initial count
-				ThreadCount,  // maximum count
+				(ThreadCount+1),  // maximum count
 				NULL);          // unnamed semaphore
 
 			do
@@ -244,7 +243,7 @@ void Planet(planet_type* pt)
 				{
 					WaitForSingleObject(MySemaphore, INFINITE);
 					ReleaseSemaphore(MySemaphore, 1, &count);
-				} while (count < ThreadCount);
+				} while ((count+1) < ThreadCount);
 
 				free(pt);
 				pt = NULL;
@@ -276,15 +275,14 @@ void Planet(planet_type* pt)
 				}
 				
 				
-				//Sleep(4000);
-				do
-				{
-					Sleep(7000);
-					WaitForSingleObject(MySemaphore, INFINITE);
-					ReleaseSemaphore(MySemaphore, 1, &count);
-				} while (count < ThreadCount);
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
+				do
+				{
+					WaitForSingleObject(MySemaphore, INFINITE);
+					ReleaseSemaphore(MySemaphore, 1, &count);
+				} while ((count+1) < ThreadCount);
+				
 				free(pt);
 				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
@@ -333,7 +331,6 @@ void Planet(planet_type* pt)
 		
 		if (MySemaphore != NULL && ResetSemaphore == FALSE)
 		{
-			Sleep(1000);
 			ReleaseSemaphore(MySemaphore, 1, &count);
 			ResetSemaphore = TRUE;
 			fucktard++;
@@ -459,7 +456,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			}
 			if (MySemaphore != NULL && ResetSemaphore == FALSE)
 			{
-				Sleep(3000);
 				ReleaseSemaphore(MySemaphore, 1, &count);
 				ResetSemaphore = TRUE;
 				fucktard++;
