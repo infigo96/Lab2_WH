@@ -37,7 +37,9 @@
 /*       types are of importance to you we will write comments*/
 /*       to indicate that. (Ignore them for now.)             */
 /**************************************************************/
+
 planet_type* head = NULL;
+
 LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
@@ -74,7 +76,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	/* The tile of the window, the callback function */
 	/* and the backgrond color */
 
-	hWnd = windowCreate(hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW + 3);
+	hWnd = windowCreate(hPrevInstance, hInstance, nCmdShow, "Himmel", MainWndProc, COLOR_WINDOW + 2);
 
 	/* start the timer for the periodic update of the window    */
 	/* (this is a one-shot timer, which means that it has to be */
@@ -145,7 +147,7 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			createPlanet(tmp);													//Put it in the database by "creating it"
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
 
-			
+
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
 		//posY++;
@@ -161,42 +163,64 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 	return 0;
 }
+void Ship(planet_type* ship)
+{
+	float angle;
+	double a = 0, ax = 0, ay = 0, r = 1000;
+	planet_type* tmp = ship;
+	WPARAM wParam;
+
+	while (ship->name != "SHIP")
+		ship = ship->next;
+
+	while (tmp != NULL && tmp != ship)
+	{
+		r = sqrt(pow(((tmp->sx) - (ship->sx)), 2) + pow((tmp->sy) - (ship->sy), 2));
+		a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
+		ax = ax + (a*((tmp->sx) - (ship->sx)));
+		ay = ay + (a*((tmp->sy) - (ship->sy)));
+
+		tmp = tmp->next;
+	}
+
+}
 void Planet(planet_type* pt)
 {
 	planet_type* tmp = pt->next;
 	planet_type* tmp2;
 	char message[256] = "Your planet ";
 	strcat(message, pt->name);
-	
-	double total_time, a = 0, ax = 0, ay = 0, r = 1000;
+	double a = 0, ax = 0, ay = 0, r = 1000, total_time = 0;
+
+
 	clock_t time2, time = clock();
 
 	while (pt->life > 0)
 	{
 		HANDLE mailbox = INVALID_HANDLE_VALUE;
-		
+
 		ax = 0;
 		a = 0;
 		ay = 0;
 		(pt->life)--;
 		if (pt->sx < 0 || pt->sx > 800 || pt->sy < 0 || pt->sy > 600)			//if the planet goes out of bounds it dies 
 		{
-			pt->life = 0; 
+			pt->life = 0;
 			strcat(message, " died by going out of bounds\n");
 		}
 		else if (r < 3)			//if the planet "collides" by going to close to another planet it dies
 		{
-			pt->life = 0; 
+			pt->life = 0;
 			strcat(message, " died by colliding with another planet\n");
 		}
-		else if(pt->life <= 0)		//if life is 0 it dies 
+		else if (pt->life <= 0)		//if life is 0 it dies 
 		{
 			strcat(message, " died because life went to 0\n");
 		}
-		
+
 		if (pt->life <= 0)		//handeling of the death
 		{
-			
+
 			do
 			{
 				mailbox = mailslotConnect(pt->pid);
@@ -206,13 +230,13 @@ void Planet(planet_type* pt)
 			{
 
 				head = NULL;
-				mailslotWrite(mailbox, message, strlen(message)+1);
+				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
 				Sleep(4000);			//wait is the best medicine, CS won�t work well
-				
+
 				free(pt);
 				pt = NULL;
-				
+
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
@@ -236,17 +260,17 @@ void Planet(planet_type* pt)
 						head = tmp->next;
 					}
 				}
-				
-				mailslotWrite(mailbox, message, strlen(message)+1);
+
+				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
 				Sleep(4000);
 				free(pt);
-				
+
 				return;
 			}
 
 		}
-		
+
 
 		while (tmp != NULL && tmp != pt)
 		{
@@ -254,9 +278,9 @@ void Planet(planet_type* pt)
 			a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
 			ax = ax + (a*((tmp->sx) - (pt->sx)));
 			ay = ay + (a*((tmp->sy) - (pt->sy)));
-			
+
 			tmp = tmp->next;
-			
+
 		}
 		time2 = clock();
 		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
@@ -265,16 +289,16 @@ void Planet(planet_type* pt)
 		pt->sx = pt->sx + (pt->vx * 10);
 		pt->sy = pt->sy + (pt->vy * 10);
 		time = clock();
-		
+
 		tmp = pt->next;
-		
+
 
 		if (tmp == NULL)
 		{
-			
+
 			tmp = pt->next;
 		}
-		
+
 		Sleep(3);
 	}
 }
@@ -319,12 +343,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	static int posX = 10;
 	int posY;
 	HANDLE context;
-	static DWORD color = 0;
-	int blub = 0;
-	planet_type* pt = NULL;
+	HANDLE databaseMutex = CreateMutex(NULL, FALSE, "accessToDatabase");
 	planet_type* tmp = NULL;
+	planet_type* FirstPlanet = NULL;
 
-	switch (msg) {
+	switch (msg)
+	{
 		/**************************************************************/
 		/*    WM_CREATE:        (received on window creation)
 		/**************************************************************/
@@ -336,67 +360,78 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/**************************************************************/
 	case WM_TIMER:
 
-		/* NOTE: replace code below for periodic update of the window */
-		/*       e.g. draw a planet system)                           */
-		/* NOTE: this is referred to as the 'graphics' thread in the lab spec. */
+		Rectangle(hDC, 0, 0, 800, 600);
 
-		/* here we draw a simple sinus curve in the window    */
-		tmp = NULL;
-		while (TRUE)
+		WaitForSingleObject(databaseMutex, INFINITE);
+
+		FirstPlanet = head;
+		tmp = FirstPlanet;
+
+		if (FirstPlanet != NULL)
 		{
-			//TryEnterCriticalSection(&CS);
-			if (tmp != NULL)
-			{
-				
+			do {
+
+				int size = log10((int)tmp->mass);
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
 
-				/*Instead of one pixel, the planet is a cross made out of 5 pixels*/
+				Ellipse(hDC, posX - size, posY + size, posX + size, posY - size);
 
-				int posX1 = posX - 1;
-				int posX2 = posX + 1;
-				int posY1 = posY - 1;
-				int posY2 = posY + 1;
-				SetPixel(hDC, posX, posY, (COLORREF)color);
-				SetPixel(hDC, posX1, posY, (COLORREF)color);
-				SetPixel(hDC, posX2, posY, (COLORREF)color);
-				SetPixel(hDC, posX, posY1, (COLORREF)color);
-				SetPixel(hDC, posX, posY2, (COLORREF)color);
+				tmp = tmp->next;
 
-				SetPixel(hDC, posX, posY, (COLORREF)color);
-				color += 1;										//Color changes with each calculation to show speed of planet better
-				windowRefreshTimer(hWnd, UPDATE_FREQ);
-				if (tmp->next != NULL)
-				{
-					
-					tmp = tmp->next;
-					
-				}
-			}
-			if (head == NULL || head->next == NULL)
-			{
-				tmp = head;
-			}
-			
+			} while (tmp != FirstPlanet);
 		}
 
-		/****************************************************************\
-		*     WM_PAINT: (received when the window needs to be repainted, *
-		*               e.g. when maximizing the window)                 *
-		\****************************************************************/
+		ReleaseMutex(databaseMutex);
+		windowRefreshTimer(hWnd, UPDATE_FREQ);
+		break;
 
 	case WM_PAINT:
-		/* NOTE: The code for this message can be removed. It's just */
-		/*       for showing something in the window.                */
-		context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
-		TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
-		EndPaint(hWnd, &ps);
+
+		//context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
+		//TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
+		//EndPaint(hWnd, &ps);
+
 		break;
-		/**************************************************************\
-		*     WM_DESTROY: PostQuitMessage() is called                  *
-		*     (received when the user presses the "quit" button in the *
-		*      window)                                                 *
-		\**************************************************************/
+
+	case WM_KEYDOWN:
+	
+		switch (wParam)
+		{
+		case VK_LEFT: // Process the LEFT ARROW key.
+
+			context = BeginPaint(hWnd, &ps);
+			TextOut(context, 815, 10, "Left", 4);
+			EndPaint(hWnd, &ps);
+
+			break;
+
+		case VK_RIGHT: // Process the RIGHT ARROW key. 
+
+			context = BeginPaint(hWnd, &ps);
+			TextOut(context, 815, 20, "Right", 5);
+			EndPaint(hWnd, &ps);
+
+			break;
+
+		case VK_UP: // Process the UP ARROW key. 
+
+			context = BeginPaint(hWnd, &ps);
+			TextOut(context, 815, 30, "Up", 2);
+			EndPaint(hWnd, &ps);
+
+			break;
+
+		case VK_DOWN: // Process the DOWN ARROW key. 
+
+			context = BeginPaint(hWnd, &ps);
+			TextOut(context, 815, 40, "Down", 4);
+			EndPaint(hWnd, &ps);
+
+			break;
+		}
+		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		/* NOTE: Windows will automatically release most resources this */
@@ -410,8 +445,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/**************************************************************\
 		*     Let the default window proc handle all other messages    *
 		\**************************************************************/
+
+
 	default:
 		return(DefWindowProc(hWnd, msg, wParam, lParam));
 	}
+
+
 	return 0;
 }
