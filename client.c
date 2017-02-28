@@ -114,7 +114,7 @@ void main(void) {
 			printf("enter the expected life of %s in seconds\n", pt->name);		//life expecancy of the new planet
 			input(MESSAGE);
 			sort_number(MESSAGE);
-			pt->life = 200*atoi(MESSAGE);
+			pt->life = 300*atoi(MESSAGE);
 		} while (pt->life <= 0);
 		
 		do

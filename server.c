@@ -176,6 +176,10 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			ResetSemaphore = TRUE;
 			fucktard++;
 		}
+		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+		{
+			ResetSemaphore = FALSE;
+		}
 	}
 
 	return 0;
@@ -193,7 +197,7 @@ void Planet(planet_type* pt)
 	double total_time, a = 0, ax = 0, ay = 0, r = 1000;
 	clock_t time2, time = clock();
 
-	while (pt->life > 0)
+	for (;;)
 	{
 		HANDLE mailbox = INVALID_HANDLE_VALUE;
 		
@@ -223,7 +227,7 @@ void Planet(planet_type* pt)
 			MySemaphore = CreateSemaphore(
 				NULL,           // default security attributes
 				1,  // initial count
-				(ThreadCount+1),  // maximum count
+				(ThreadCount+2),  // maximum count
 				NULL);          // unnamed semaphore
 
 			do
@@ -249,6 +253,7 @@ void Planet(planet_type* pt)
 				pt = NULL;
 				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
+				MySemaphore = NULL;
 				ThreadCount--;
 				return;
 			}
@@ -286,6 +291,7 @@ void Planet(planet_type* pt)
 				free(pt);
 				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
+				MySemaphore = NULL;
 				ThreadCount--;
 				return;
 			}
@@ -331,9 +337,13 @@ void Planet(planet_type* pt)
 		
 		if (MySemaphore != NULL && ResetSemaphore == FALSE)
 		{
-			ReleaseSemaphore(MySemaphore, 1, &count);
+			ReleaseSemaphore(MySemaphore, 1, NULL);
 			ResetSemaphore = TRUE;
 			fucktard++;
+		}
+		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+		{
+			ResetSemaphore = FALSE;
 		}
 		//LeaveCriticalSection(&CS);
 		Sleep(3);
@@ -459,6 +469,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				ReleaseSemaphore(MySemaphore, 1, &count);
 				ResetSemaphore = TRUE;
 				fucktard++;
+			}
+			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+			{
+				ResetSemaphore = FALSE;
 			}
 			//LeaveCriticalSection(&CS);
 		}
