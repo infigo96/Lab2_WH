@@ -96,17 +96,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	threadID = threadCreate(mailThread, NULL);
 
-
 	/* (the message processing loop that all windows applications must have) */
 	/* NOTE: just leave it as it is. */
-	while (GetMessage(&msg, NULL, 0, 0)) {
+	/*while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+
+	}*/
+
+	while (GetMessage(&msg, (HWND)NULL, 0, 0))
+	{
+		if (TranslateAccelerator(MainWndProc, hWnd, &msg) == 0)
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
 	}
 
 	return msg.wParam;
-}
 
+}
 
 /********************************************************************\
 * Function: mailThread                                               *
@@ -115,11 +125,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 /********************************************************************/
 DWORD WINAPI mailThread(LPVOID arg) {
 
-	char buffer[1024];
+	
 	DWORD bytesRead;
-	static int posY = 0;
 	HANDLE mailbox;
 	planet_type* tmp = NULL;
+
 	/* create a mailslot that clients can use to pass requests through   */
 	/* (the clients use the name below to get contact with the mailslot) */
 	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
@@ -128,7 +138,8 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 	mailbox = mailslotCreate("mailbox");
 
-	for (;;) {
+	for (;;)
+	{
 
 		/* (ordinary file manipulating functions are used to read from mailslots) */
 		/* in this example the server receives strings from the client side and   */
@@ -146,14 +157,12 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));		//read the new planet from the client
 			createPlanet(tmp);													//Put it in the database by "creating it"
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
-
+			
 
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
-		//posY++;
+		
 			/* (hDC is used reference the previously created window) */
-		//bytesRead = strlen(tmp->name)+1;
-		//TextOut(hDC, 10, 50 + posY % 200, tmp->name, bytesRead);
 		}
 		else {
 			/* failed reading from mailslot                              */
@@ -163,31 +172,11 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 	return 0;
 }
-void Ship(planet_type* ship)
-{
-	float angle;
-	double a = 0, ax = 0, ay = 0, r = 1000;
-	planet_type* tmp = ship;
-	WPARAM wParam;
 
-	while (ship->name != "SHIP")
-		ship = ship->next;
-
-	while (tmp != NULL && tmp != ship)
-	{
-		r = sqrt(pow(((tmp->sx) - (ship->sx)), 2) + pow((tmp->sy) - (ship->sy), 2));
-		a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
-		ax = ax + (a*((tmp->sx) - (ship->sx)));
-		ay = ay + (a*((tmp->sy) - (ship->sy)));
-
-		tmp = tmp->next;
-	}
-
-}
 void Planet(planet_type* pt)
 {
 	planet_type* tmp = pt->next;
-	planet_type* tmp2;
+//	planet_type* tmp2;
 	char message[256] = "Your planet ";
 	strcat(message, pt->name);
 	double a = 0, ax = 0, ay = 0, r = 1000, total_time = 0;
@@ -307,7 +296,7 @@ void createPlanet(planet_type* pt)
 	if (head == NULL)		//if the database is empty
 	{
 		head = pt;
-		(head)->next = NULL;
+		(head)->next = head;
 	}
 	else if ((head)->next == NULL)		//if there is only one planet in the database
 	{
@@ -320,8 +309,6 @@ void createPlanet(planet_type* pt)
 		(head)->next = pt;
 	}
 }
-
-
 
 /********************************************************************\
 * Function: LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM) *
@@ -340,117 +327,117 @@ void createPlanet(planet_type* pt)
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	PAINTSTRUCT ps;
-	static int posX = 10;
-	int posY;
+	static int posX, posY;
 	HANDLE context;
 	HANDLE databaseMutex = CreateMutex(NULL, FALSE, "accessToDatabase");
 	planet_type* tmp = NULL;
 	planet_type* FirstPlanet = NULL;
+	planet_type* ship = NULL;
 
-	switch (msg)
-	{
-		/**************************************************************/
-		/*    WM_CREATE:        (received on window creation)
-		/**************************************************************/
-	case WM_CREATE:
-		hDC = GetDC(hWnd);
-		break;
-		/**************************************************************/
-		/*    WM_TIMER:         (received when our timer expires)
-		/**************************************************************/
-	case WM_TIMER:
 
-		Rectangle(hDC, 0, 0, 800, 600);
-
-		WaitForSingleObject(databaseMutex, INFINITE);
-
-		FirstPlanet = head;
-		tmp = FirstPlanet;
-
-		if (FirstPlanet != NULL)
+		switch (msg)
 		{
-			do {
+			/**************************************************************/
+			/*    WM_CREATE:        (received on window creation)
+			/**************************************************************/
+		case WM_CREATE:
+			hDC = GetDC(hWnd);
+			break;
+			/**************************************************************/
+			/*    WM_TIMER:         (received when our timer expires)
+			/**************************************************************/
+		case WM_TIMER:
 
-				int size = log10((int)tmp->mass);
-				posX = (int)tmp->sx;
-				posY = (int)tmp->sy;
+			Rectangle(hDC, 0, 0, 800, 600);
 
-				Ellipse(hDC, posX - size, posY + size, posX + size, posY - size);
+			WaitForSingleObject(databaseMutex, INFINITE);
+			FirstPlanet = head;
+			tmp = FirstPlanet;
+			
+			if (FirstPlanet != NULL)
+			{
+				do {
 
-				tmp = tmp->next;
+					int size = log10((int)tmp->mass);
+					posX = (int)tmp->sx;
+					posY = (int)tmp->sy;
 
-			} while (tmp != FirstPlanet);
+					Ellipse(hDC, posX - size, posY + size, posX + size, posY - size);
+					if (strcmp(tmp->name, "SHIP"))
+						ship = tmp;
+
+					tmp = tmp->next;
+					//do {} while (tmp == NULL);
+
+					
+				} while (tmp != FirstPlanet);
+			}
+
+			ReleaseMutex(databaseMutex);
+			windowRefreshTimer(hWnd, UPDATE_FREQ);
+			break;
+
+		case WM_PAINT:
+			
+			Rectangle(hDC, 0, 0, 800, 600);
+			//context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
+			//TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
+			//EndPaint(hWnd, &ps);
+
+			break;
+
+		case WM_KEYDOWN:
+			
+			if (ship == NULL)
+				break;
+
+			switch (wParam)
+			{
+			case VK_LEFT: // Process the LEFT ARROW key.
+				
+				ship->sx = ship->sx - 5;
+				break;
+				
+			case VK_RIGHT: // Process the RIGHT ARROW key. 
+
+		
+				ship->sx = ship->sx + 5;
+				break;
+
+			case VK_UP: // Process the UP ARROW key. 
+
+				//ship->sy = ship->sy - 5;
+				break;
+
+			case VK_DOWN: // Process the DOWN ARROW key. 
+
+				ship->sy = ship->sy + 5;
+				break;
+
+			default:
+				break;
+			}
+			break;
+
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			/* NOTE: Windows will automatically release most resources this */
+			///*       process is using, e.g. memory and mailslots.           */
+			/*       (So even though we don't free the memory which has been*/
+			/*       allocated by us, there will not be memory leaks.)      */
+
+			ReleaseDC(hWnd, hDC); /* Some housekeeping */
+			break;
+
+			/**************************************************************\
+			*     Let the default window proc handle all other messages    *
+			\**************************************************************/
+
+
+		default:
+			return(DefWindowProc(hWnd, msg, wParam, lParam));
 		}
 
-		ReleaseMutex(databaseMutex);
-		windowRefreshTimer(hWnd, UPDATE_FREQ);
-		break;
-
-	case WM_PAINT:
-
-		//context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
-		//TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
-		//EndPaint(hWnd, &ps);
-
-		break;
-
-	case WM_KEYDOWN:
 	
-		switch (wParam)
-		{
-		case VK_LEFT: // Process the LEFT ARROW key.
-
-			context = BeginPaint(hWnd, &ps);
-			TextOut(context, 815, 10, "Left", 4);
-			EndPaint(hWnd, &ps);
-
-			break;
-
-		case VK_RIGHT: // Process the RIGHT ARROW key. 
-
-			context = BeginPaint(hWnd, &ps);
-			TextOut(context, 815, 20, "Right", 5);
-			EndPaint(hWnd, &ps);
-
-			break;
-
-		case VK_UP: // Process the UP ARROW key. 
-
-			context = BeginPaint(hWnd, &ps);
-			TextOut(context, 815, 30, "Up", 2);
-			EndPaint(hWnd, &ps);
-
-			break;
-
-		case VK_DOWN: // Process the DOWN ARROW key. 
-
-			context = BeginPaint(hWnd, &ps);
-			TextOut(context, 815, 40, "Down", 4);
-			EndPaint(hWnd, &ps);
-
-			break;
-		}
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		/* NOTE: Windows will automatically release most resources this */
-		/*       process is using, e.g. memory and mailslots.           */
-		/*       (So even though we don't free the memory which has been*/
-		/*       allocated by us, there will not be memory leaks.)      */
-
-		ReleaseDC(hWnd, hDC); /* Some housekeeping */
-		break;
-
-		/**************************************************************\
-		*     Let the default window proc handle all other messages    *
-		\**************************************************************/
-
-
-	default:
-		return(DefWindowProc(hWnd, msg, wParam, lParam));
-	}
-
-
-	return 0;
+		return 0;
 }
