@@ -332,7 +332,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	planet_type* tmp = NULL;
 	planet_type* FirstPlanet = NULL;
 	planet_type* ship = NULL;
-
+	char speedx[10], speedy[10], life[10];
 
 	switch (msg)
 	{
@@ -348,6 +348,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	case WM_TIMER:
 
 		Rectangle(hDC, 0, 0, 800, 600);
+		Rectangle(hDC, 810, 0, 940, 70);
+		TextOut(hDC, 820, 5, "Ship Status", 11);
 
 		WaitForSingleObject(databaseMutex, INFINITE);
 		FirstPlanet = head;
@@ -359,17 +361,25 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
-
-
+				
 				if (!strcmp(tmp->name, "SHIP"))
 				{
-					ship = tmp;
-					Rectangle(hDC, posX - 5, posY + 5, posX + 5, posY - 5);
+					Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
+					//SetTextAlign(hDC, VTA_CENTER);
+					sprintf(speedx, "%lf", tmp->vx);
+					sprintf(speedy, "%lf", tmp->vy);
+					sprintf(life, "%d", tmp->life);
+					TextOut(hDC, 820, 20, "X: ", 3);
+					TextOut(hDC, 820, 35, "Y: ", 3);
+					TextOut(hDC, 820, 50, "Life:", 5);
+					TextOut(hDC, 850, 20, speedx, lstrlen(speedx));
+					TextOut(hDC, 850, 35, speedy, lstrlen(speedy));
+					TextOut(hDC, 850, 50, life, lstrlen(life));
 				}
 				else
 				{
 					int size = log10((int)tmp->mass);
-					Ellipse(hDC, posX - size, posY + size, posX + size, posY - size);
+					Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
 				}
 				tmp = tmp->next;
 
@@ -393,7 +403,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	case WM_KEYDOWN:
 
+		
+
 		ship = head;
+		if (ship == NULL)
+			break;
 		while (strcmp(ship->name, "SHIP"))
 			ship = ship->next;
 
@@ -401,23 +415,23 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		{
 		case VK_LEFT: // Process the LEFT ARROW key.
 
-			ship->sx = ship->sx - 5;
+			ship->vx = ship->vx - 0.001;
 			break;
 
 		case VK_RIGHT: // Process the RIGHT ARROW key. 
 
 
-			ship->sx = ship->sx + 5;
+			ship->vx = ship->vx + 0.001;
 			break;
 
 		case VK_UP: // Process the UP ARROW key. 
 
-			ship->sy = ship->sy - 5;
+			ship->vy = ship->vy - 0.001;
 			break;
 
 		case VK_DOWN: // Process the DOWN ARROW key. 
 
-			ship->sy = ship->sy + 5;
+			ship->vy = ship->vy + 0.001;
 			break;
 
 		default:
