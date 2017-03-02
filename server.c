@@ -45,7 +45,9 @@ DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
 void Planet(planet_type* pt);
 CRITICAL_SECTION CS;
-
+HANDLE MySemaphore = NULL;
+ThreadCount = 0;
+int fucktard = 0;
 
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 				/* we need it to access the window for printing and drawin */
@@ -66,7 +68,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-
+	InitializeCriticalSection(&CS);
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -126,15 +128,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 DWORD WINAPI mailThread(LPVOID arg) {
 
 
+	long count = 0;
+	char buffer[1024];
 	DWORD bytesRead;
 	HANDLE mailbox;
 	planet_type* tmp = NULL;
-
+	BOOL Waited = FALSE, ResetSemaphore = FALSE; 
 	/* create a mailslot that clients can use to pass requests through   */
 	/* (the clients use the name below to get contact with the mailslot) */
 	/* NOTE: The name of a mailslot must start with "\\\\.\\mailslot\\"  */
-
-
+	ThreadCount++;
 
 	mailbox = mailslotCreate("mailbox");
 
@@ -149,7 +152,17 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 		GetMailslotInfo(mailbox, 0, &bytesRead, 0, 0);
 
-
+		/*if (MySemaphore != NULL && Waited == FALSE)
+		{
+			WaitForSingleObject(MySemaphore, INFINITE);
+			
+			Waited = TRUE;
+		}
+		else if (MySemaphore == NULL && (Waited == TRUE || ResetSemaphore == TRUE))
+		{
+			Waited = FALSE;
+			ResetSemaphore == FALSE;
+		}*/
 		if (bytesRead != -1)
 		{
 			tmp = malloc(sizeof(planet_type));
@@ -158,7 +171,8 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			createPlanet(tmp);													//Put it in the database by "creating it"
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
 
-
+			ThreadCount++;
+			
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
 
@@ -168,6 +182,16 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			/* failed reading from mailslot                              */
 			/* (in this example we ignore this, and happily continue...) */
 		}
+		if (MySemaphore != NULL && ResetSemaphore == FALSE)
+		{
+			ReleaseSemaphore(MySemaphore, 1, &count);
+			ResetSemaphore = TRUE;
+			fucktard++;
+		}
+		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+		{
+			ResetSemaphore = FALSE;
+		}
 	}
 
 	return 0;
@@ -175,15 +199,19 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 void Planet(planet_type* pt)
 {
+	BOOL Waited = FALSE;
+	BOOL ResetSemaphore = FALSE;
 	planet_type* tmp = pt->next;
 	char message[256] = "Your planet ";
 	strcat(message, pt->name);
-	double a = 0, ax = 0, ay = 0, r = 1000, total_time = 0;
 
+	long count = 0;
+	
+	double total_time, a = 0, ax = 0, ay = 0, r = 1000;
 
 	clock_t time2, time = clock();
 
-	while (pt->life > 0)
+	for (;;)
 	{
 		HANDLE mailbox = INVALID_HANDLE_VALUE;
 
@@ -206,8 +234,15 @@ void Planet(planet_type* pt)
 			strcat(message, " died because life went to 0\n");
 		}
 
-		if (pt->life <= 0)		//handeling of the death
+		if (pt->life <= 0 && MySemaphore == NULL)		//handeling of the death
 		{
+			//EnterCriticalSection(&CS);
+			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			MySemaphore = CreateSemaphore(
+				NULL,           // default security attributes
+				1,  // initial count
+				(ThreadCount+2),  // maximum count
+				NULL);          // unnamed semaphore
 
 			do
 			{
@@ -220,11 +255,21 @@ void Planet(planet_type* pt)
 				head = NULL;
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
-				Sleep(4000);			//wait is the best medicine, CS won�t work well
+
+				//Sleep(4000);			//wait is the best medicine, CS won�t work well
+				
+				do
+				{
+					WaitForSingleObject(MySemaphore, INFINITE);
+					ReleaseSemaphore(MySemaphore, 1, &count);
+				} while ((count) < ThreadCount);
 
 				free(pt);
 				pt = NULL;
-
+				//LeaveCriticalSection(&CS);
+				CloseHandle(MySemaphore);
+				MySemaphore = NULL;
+				ThreadCount--;
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
@@ -248,20 +293,47 @@ void Planet(planet_type* pt)
 						head = tmp->next;
 					}
 				}
-
+				
+				
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
-				Sleep(4000);
+				do
+				{
+					WaitForSingleObject(MySemaphore, INFINITE);
+					ReleaseSemaphore(MySemaphore, 1, &count);
+				} while ((count) < ThreadCount);
+				
 				free(pt);
-
+				//LeaveCriticalSection(&CS);
+				CloseHandle(MySemaphore);
+				MySemaphore = NULL;
+				ThreadCount--;
 				return;
 			}
 
 		}
 
+		//WaitForSingleObject()
+		//EnterCriticalSection(&CS);
+		/*if (MySemaphore != NULL && Waited == FALSE)
+		{
+			WaitForSingleObject(MySemaphore, INFINITE);
+			Waited = TRUE;
+		}
+		else if (MySemaphore == NULL && (Waited == TRUE || ResetSemaphore == TRUE))
+		{
+			Waited = FALSE;
+			ResetSemaphore == FALSE;
+		}*/
 
+		tmp = pt->next;
+		if (tmp == NULL)
+		{
+			tmp = pt->next;
+		}
 		while (tmp != NULL && tmp != pt)
 		{
+			
 			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));		//radie between planets
 			a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
 			ax = ax + (a*((tmp->sx) - (pt->sx)));
@@ -270,6 +342,7 @@ void Planet(planet_type* pt)
 			tmp = tmp->next;
 
 		}
+		
 		time2 = clock();
 		total_time = (double)(time2 - time) / CLOCKS_PER_SEC;
 		pt->vx = pt->vx + (ax * 10);		//new velocity...
@@ -278,15 +351,17 @@ void Planet(planet_type* pt)
 		pt->sy = pt->sy + (pt->vy * 10);
 		time = clock();
 
-		tmp = pt->next;
-
-
-		if (tmp == NULL)
+		if (MySemaphore != NULL && ResetSemaphore == FALSE)
 		{
-
-			tmp = pt->next;
+			ReleaseSemaphore(MySemaphore, 1, NULL);
+			ResetSemaphore = TRUE;
+			fucktard++;
 		}
-
+		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+		{
+			ResetSemaphore = FALSE;
+		}
+		//LeaveCriticalSection(&CS);
 		Sleep(3);
 	}
 }
@@ -324,15 +399,19 @@ void createPlanet(planet_type* pt)
 /* NOTE: This function is called by Windows when something happens to our window */
 
 LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-
+	long count = 0;
 	PAINTSTRUCT ps;
 	static int posX, posY;
 	HANDLE context;
 	HANDLE databaseMutex = (NULL, FALSE, "accessToDatabase");
 	planet_type* tmp = NULL;
+
 	planet_type* FirstPlanet = NULL;
 	planet_type* ship = NULL;
 	char speedx[10], speedy[10], life[10];
+	BOOL Waited = FALSE;
+	BOOL ResetSemaphore = FALSE;
+
 
 	switch (msg)
 	{
@@ -384,6 +463,25 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				tmp = tmp->next;
 
 			} while (tmp != FirstPlanet);
+
+				
+			}
+			if (head == NULL || head->next == NULL)
+			{
+				tmp = head;
+			}
+			if (MySemaphore != NULL && ResetSemaphore == FALSE)
+			{
+				ReleaseSemaphore(MySemaphore, 1, &count);
+				ResetSemaphore = TRUE;
+				fucktard++;
+			}
+			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+			{
+				ResetSemaphore = FALSE;
+			}
+			//LeaveCriticalSection(&CS);
+
 		}
 
 		ReleaseMutex(databaseMutex);
