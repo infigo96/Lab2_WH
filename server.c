@@ -322,14 +322,14 @@ void Planet(planet_type* pt)
 		{
 			tmp = pt->next;
 		}
-		while (tmp != NULL && tmp != pt)
+		while (tmp != NULL && tmp != pt && r >= 3)
 		{
 			
 			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));		//radie between planets
 			a = (GRAV*(tmp->mass)) / pow(r, 3);				//accleration
 			ax = ax + (a*((tmp->sx) - (pt->sx)));
 			ay = ay + (a*((tmp->sy) - (pt->sy)));
-
+			
 			tmp = tmp->next;
 
 		}
@@ -359,7 +359,7 @@ void createPlanet(planet_type* pt)
 	if (head == NULL)		//if the database is empty
 	{
 		head = pt;
-		(head)->next = head;
+		(head)->next = NULL;
 	}
 	else if ((head)->next == NULL)		//if there is only one planet in the database
 	{
@@ -423,14 +423,14 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		FirstPlanet = head;
 		tmp = FirstPlanet;
 
-		if (FirstPlanet != NULL)
+		if (FirstPlanet != NULL && tmp != NULL)
 		{
-			
+
 			do {
 
 				posX = (int)tmp->sx;
 				posY = (int)tmp->sy;
-				
+
 				if (!strcmp(tmp->name, "SHIP"))
 				{
 					Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
@@ -452,22 +452,25 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				}
 				tmp = tmp->next;
 
-			} while (tmp != FirstPlanet);
 
-			if (head == NULL || head->next == NULL)
-			{
-				tmp = head;
-			}
-			if (MySemaphore != NULL && ResetSemaphore == FALSE)
-			{
-				ReleaseSemaphore(MySemaphore, 1, &count);
-				ResetSemaphore = TRUE;
-			}
-			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
-			{
-				ResetSemaphore = FALSE;
-			}
+			} while (tmp != FirstPlanet && tmp != NULL && FirstPlanet != NULL);
 		}
+
+
+		if (head == NULL || head->next == NULL)
+		{
+			tmp = head;
+		}
+		if (MySemaphore != NULL && ResetSemaphore == FALSE)
+		{
+			ReleaseSemaphore(MySemaphore, 1, &count);
+			ResetSemaphore = TRUE;
+		}
+		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+		{
+			ResetSemaphore = FALSE;
+		}
+		
 
 		ReleaseMutex(databaseMutex);
 		windowRefreshTimer(hWnd, UPDATE_FREQ);
