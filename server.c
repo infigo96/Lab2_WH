@@ -38,16 +38,16 @@
 /*       to indicate that. (Ignore them for now.)             */
 /**************************************************************/
 
-planet_type* head = NULL;
+
 
 LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
 void Planet(planet_type* pt);
-CRITICAL_SECTION CS;
+
 HANDLE MySemaphore = NULL;
+planet_type* head = NULL;
 ThreadCount = 0;
-int fucktard = 0;
 
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 				/* we need it to access the window for printing and drawin */
@@ -68,7 +68,7 @@ HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 /* NOTE: In windows WinMain is the start function, not main */
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-	InitializeCriticalSection(&CS);
+
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
@@ -186,7 +186,6 @@ DWORD WINAPI mailThread(LPVOID arg) {
 		{
 			ReleaseSemaphore(MySemaphore, 1, &count);
 			ResetSemaphore = TRUE;
-			fucktard++;
 		}
 		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
 		{
@@ -196,7 +195,6 @@ DWORD WINAPI mailThread(LPVOID arg) {
 
 	return 0;
 }
-
 void Planet(planet_type* pt)
 {
 	BOOL Waited = FALSE;
@@ -236,8 +234,6 @@ void Planet(planet_type* pt)
 
 		if (pt->life <= 0 && MySemaphore == NULL)		//handeling of the death
 		{
-			//EnterCriticalSection(&CS);
-			//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			MySemaphore = CreateSemaphore(
 				NULL,           // default security attributes
 				1,  // initial count
@@ -255,8 +251,6 @@ void Planet(planet_type* pt)
 				head = NULL;
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
-
-				//Sleep(4000);			//wait is the best medicine, CS won�t work well
 				
 				do
 				{
@@ -266,7 +260,6 @@ void Planet(planet_type* pt)
 
 				free(pt);
 				pt = NULL;
-				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
 				MySemaphore = NULL;
 				ThreadCount--;
@@ -313,8 +306,6 @@ void Planet(planet_type* pt)
 
 		}
 
-		//WaitForSingleObject()
-		//EnterCriticalSection(&CS);
 		/*if (MySemaphore != NULL && Waited == FALSE)
 		{
 			WaitForSingleObject(MySemaphore, INFINITE);
@@ -355,13 +346,11 @@ void Planet(planet_type* pt)
 		{
 			ReleaseSemaphore(MySemaphore, 1, NULL);
 			ResetSemaphore = TRUE;
-			fucktard++;
 		}
 		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
 		{
 			ResetSemaphore = FALSE;
 		}
-		//LeaveCriticalSection(&CS);
 		Sleep(3);
 	}
 }
@@ -436,6 +425,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 		if (FirstPlanet != NULL)
 		{
+			
 			do {
 
 				posX = (int)tmp->sx;
@@ -444,7 +434,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				if (!strcmp(tmp->name, "SHIP"))
 				{
 					Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
-					//SetTextAlign(hDC, VTA_CENTER);
 					sprintf(speedx, "%lf", tmp->vx);
 					sprintf(speedy, "%lf", tmp->vy);
 					sprintf(life, "%d", tmp->life);
@@ -459,13 +448,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 				{
 					int size = log10((int)tmp->mass);
 					Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
+					CreateSolidBrush(3);
 				}
 				tmp = tmp->next;
 
 			} while (tmp != FirstPlanet);
 
-				
-			}
 			if (head == NULL || head->next == NULL)
 			{
 				tmp = head;
@@ -474,14 +462,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 			{
 				ReleaseSemaphore(MySemaphore, 1, &count);
 				ResetSemaphore = TRUE;
-				fucktard++;
 			}
 			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
 			{
 				ResetSemaphore = FALSE;
 			}
-			//LeaveCriticalSection(&CS);
-
 		}
 
 		ReleaseMutex(databaseMutex);
@@ -493,9 +478,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		context = BeginPaint(hWnd, &ps);
 		Rectangle(hDC, 0, 0, 800, 600);
 		EndPaint(hWnd, &ps);
-		//context = BeginPaint(hWnd, &ps); /* (you can safely remove the following line of code) */
-		//TextOut(context, 10, 10, "Hello, World!", 13); /* 13 is the string length */
-		//EndPaint(hWnd, &ps);
 
 		break;
 
@@ -507,7 +489,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		if (ship == NULL)
 			break;
 		while (strcmp(ship->name, "SHIP"))
+		{
 			ship = ship->next;
+			if (ship == head && strcmp(head->name, "SHIP")) 
+				break;
+		}
 
 		switch (wParam)
 		{
