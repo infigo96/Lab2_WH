@@ -335,7 +335,7 @@ void main(void) {
 					printf("failed sending data to server\n");
 				Sleep(20);
 			}
-			strcpy(pt->name, "SHIP");
+			/*strcpy(pt->name, "SHIP");
 			pt->mass = 100000000;
 			pt->next = NULL;
 			pt->sx = 400;
@@ -347,7 +347,7 @@ void main(void) {
 			if (bytesWritten != -1)
 				printf("data sent to server (bytes = %d)\n", bytesWritten);
 			else
-				printf("failed sending data to server\n");
+				printf("failed sending data to server\n");*/
 
 		}
 	}

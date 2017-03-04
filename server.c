@@ -49,6 +49,7 @@ HANDLE MySemaphore = NULL;
 planet_type* head = NULL;
 ThreadCount = 0;
 
+UINT_PTR RAM_TIMER;
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 				/* we need it to access the window for printing and drawin */
 
@@ -72,8 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
-
-
+	
 	/* Create the window, 3 last parameters important */
 	/* The tile of the window, the callback function */
 	/* and the backgrond color */
@@ -88,6 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	windowRefreshTimer(hWnd, UPDATE_FREQ);
 
+	SetTimer(hWnd, RAM_TIMER, 500, (TIMERPROC)NULL);		//Display of the RAM usage every 500ms
 
 	/* create a thread that can handle incoming client requests */
 	/* (the thread starts executing in the function mailThread) */
@@ -168,10 +169,11 @@ DWORD WINAPI mailThread(LPVOID arg) {
 			tmp = malloc(sizeof(planet_type));
 
 			bytesRead = mailslotRead(mailbox, tmp, sizeof(planet_type));		//read the new planet from the client
+			ThreadCount++;
 			createPlanet(tmp);													//Put it in the database by "creating it"
 			threadCreate((LPTHREAD_START_ROUTINE)Planet, tmp);					//start the calculation thread for that planet
 
-			ThreadCount++;
+			
 			
 			/* NOTE: It is appropriate to replace this code with something */
 			/*       that match your needs here.                           */
@@ -204,7 +206,7 @@ void Planet(planet_type* pt)
 	strcat(message, pt->name);
 
 	long count = 0;
-	
+	int runs = 0;
 	double total_time, a = 0, ax = 0, ay = 0, r = 1000;
 
 	clock_t time2, time = clock();
@@ -212,7 +214,7 @@ void Planet(planet_type* pt)
 	for (;;)
 	{
 		HANDLE mailbox = INVALID_HANDLE_VALUE;
-
+		runs++;		//for testing
 		ax = 0;
 		a = 0;
 		ay = 0;
@@ -232,8 +234,14 @@ void Planet(planet_type* pt)
 			strcat(message, " died because life went to 0\n");
 		}
 
-		if (pt->life <= 0 && MySemaphore == NULL)		//handeling of the death
+		if (pt->life <= 0)		//handeling of the death
 		{
+
+			ThreadCount--;
+			do
+			{
+				Sleep(3);
+			} while (MySemaphore != NULL);
 			MySemaphore = CreateSemaphore(
 				NULL,           // default security attributes
 				1,  // initial count
@@ -262,12 +270,11 @@ void Planet(planet_type* pt)
 				pt = NULL;
 				CloseHandle(MySemaphore);
 				MySemaphore = NULL;
-				ThreadCount--;
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
 			{
-
+				tmp = pt->next;
 				while (tmp->next != pt)		//goes until we are on the one before our pt
 				{
 					tmp = tmp->next;
@@ -300,7 +307,6 @@ void Planet(planet_type* pt)
 				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
 				MySemaphore = NULL;
-				ThreadCount--;
 				return;
 			}
 
@@ -322,7 +328,7 @@ void Planet(planet_type* pt)
 		{
 			tmp = pt->next;
 		}
-		while (tmp != NULL && tmp != pt && r >= 3)
+		while (tmp != NULL && tmp != pt && r >= 3 && pt->life > 0)
 		{
 			
 			r = sqrt(pow(((tmp->sx) - (pt->sx)), 2) + pow((tmp->sy) - (pt->sy), 2));		//radie between planets
@@ -397,7 +403,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 	planet_type* FirstPlanet = NULL;
 	planet_type* ship = NULL;
-	char speedx[10], speedy[10], life[10];
+	char speedx[64], speedy[64], life[32];
 	BOOL Waited = FALSE;
 	BOOL ResetSemaphore = FALSE;
 
@@ -414,68 +420,84 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/*    WM_TIMER:         (received when our timer expires)
 		/**************************************************************/
 	case WM_TIMER:
-
-		Rectangle(hDC, 0, 0, 800, 600);
-		Rectangle(hDC, 810, 0, 940, 70);
-		TextOut(hDC, 820, 5, "Ship Status", 11);
-
-		WaitForSingleObject(databaseMutex, INFINITE);
-		FirstPlanet = head;
-		tmp = FirstPlanet;
-
-		if (FirstPlanet != NULL && tmp != NULL)
+		if (wParam == RAM_TIMER)
 		{
-
-			do {
-
-				posX = (int)tmp->sx;
-				posY = (int)tmp->sy;
-
-				if (!strcmp(tmp->name, "SHIP"))
-				{
-					Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
-					sprintf(speedx, "%lf", tmp->vx);
-					sprintf(speedy, "%lf", tmp->vy);
-					sprintf(life, "%d", tmp->life);
-					TextOut(hDC, 820, 20, "X: ", 3);
-					TextOut(hDC, 820, 35, "Y: ", 3);
-					TextOut(hDC, 820, 50, "Life:", 5);
-					TextOut(hDC, 850, 20, speedx, lstrlen(speedx));
-					TextOut(hDC, 850, 35, speedy, lstrlen(speedy));
-					TextOut(hDC, 850, 50, life, lstrlen(life));
-				}
-				else
-				{
-					int size = log10((int)tmp->mass);
-					Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
-					CreateSolidBrush(3);
-				}
-				tmp = tmp->next;
-
-
-			} while (tmp != FirstPlanet && tmp != NULL && FirstPlanet != NULL);
+			char tradar[24];
+			sprintf(tradar, "%d", ThreadCount - 1);
+			char RAM[24];
+			MEMORYSTATUSEX memInfo;
+			memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+			GlobalMemoryStatusEx(&memInfo);
+			DWORDLONG physMemUsed = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
+			physMemUsed = physMemUsed / 1000;
+			sprintf(RAM, "%I64u", physMemUsed);		//%I64u is the %d for unsigned_int64 (DWORDLONG)
+			TextOut(hDC, 820, 100, RAM, strlen(RAM));
+			TextOut(hDC, 820, 80, tradar, strlen(tradar));
 		}
-
-
-		if (head == NULL || head->next == NULL)
+		else
 		{
-			tmp = head;
-		}
-		if (MySemaphore != NULL && ResetSemaphore == FALSE)
-		{
-			ReleaseSemaphore(MySemaphore, 1, &count);
-			ResetSemaphore = TRUE;
-		}
-		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
-		{
-			ResetSemaphore = FALSE;
-		}
-		
+			Rectangle(hDC, 0, 0, 800, 600);
+			Rectangle(hDC, 810, 0, 940, 70);
+			TextOut(hDC, 820, 5, "Ship Status", 11);
 
-		ReleaseMutex(databaseMutex);
-		windowRefreshTimer(hWnd, UPDATE_FREQ);
+			WaitForSingleObject(databaseMutex, INFINITE);
+			FirstPlanet = head;
+			tmp = FirstPlanet;
+
+			if (FirstPlanet != NULL && tmp != NULL)
+			{
+
+				do {
+
+					posX = (int)tmp->sx;
+					posY = (int)tmp->sy;
+
+					if (!strcmp(tmp->name, "SHIP"))
+					{
+						Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
+						sprintf(speedx, "%lf", tmp->vx);
+						sprintf(speedy, "%lf", tmp->vy);
+						sprintf(life, "%d", tmp->life);
+						TextOut(hDC, 820, 20, "X: ", 3);
+						TextOut(hDC, 820, 35, "Y: ", 3);
+						TextOut(hDC, 820, 50, "Life:", 5);
+						TextOut(hDC, 850, 20, speedx, lstrlen(speedx));
+						TextOut(hDC, 850, 35, speedy, lstrlen(speedy));
+						TextOut(hDC, 850, 50, life, lstrlen(life));
+					}
+					else
+					{
+						int size = log10((int)tmp->mass);
+						Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
+						CreateSolidBrush(3);
+					}
+					tmp = tmp->next;
+
+
+				} while (tmp != FirstPlanet && tmp != NULL && FirstPlanet != NULL);
+			}
+
+
+			if (head == NULL || head->next == NULL)
+			{
+				tmp = head;
+			}
+			if (MySemaphore != NULL && ResetSemaphore == FALSE)
+			{
+				ReleaseSemaphore(MySemaphore, 1, &count);
+				ResetSemaphore = TRUE;
+			}
+			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+			{
+				ResetSemaphore = FALSE;
+			}
+
+
+			ReleaseMutex(databaseMutex);
+			windowRefreshTimer(hWnd, UPDATE_FREQ);
+		}
 		break;
-
+		
 	case WM_PAINT:
 
 		context = BeginPaint(hWnd, &ps);
