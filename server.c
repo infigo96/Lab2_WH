@@ -49,6 +49,7 @@ HANDLE MySemaphore = NULL;
 planet_type* head = NULL;
 ThreadCount = 0;
 
+UINT_PTR RAM_TIMER;
 HDC hDC;		/* Handle to Device Context, gets set 1st time in MainWndProc */
 				/* we need it to access the window for printing and drawin */
 
@@ -72,8 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
-
-
+	
 	/* Create the window, 3 last parameters important */
 	/* The tile of the window, the callback function */
 	/* and the backgrond color */
@@ -88,6 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 
 	windowRefreshTimer(hWnd, UPDATE_FREQ);
 
+	SetTimer(hWnd, RAM_TIMER, 6000, (TIMERPROC)NULL);
 
 	/* create a thread that can handle incoming client requests */
 	/* (the thread starts executing in the function mailThread) */
@@ -414,68 +415,74 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		/*    WM_TIMER:         (received when our timer expires)
 		/**************************************************************/
 	case WM_TIMER:
-
-		Rectangle(hDC, 0, 0, 800, 600);
-		Rectangle(hDC, 810, 0, 940, 70);
-		TextOut(hDC, 820, 5, "Ship Status", 11);
-
-		WaitForSingleObject(databaseMutex, INFINITE);
-		FirstPlanet = head;
-		tmp = FirstPlanet;
-
-		if (FirstPlanet != NULL && tmp != NULL)
+		if (wParam == RAM_TIMER)
 		{
-
-			do {
-
-				posX = (int)tmp->sx;
-				posY = (int)tmp->sy;
-
-				if (!strcmp(tmp->name, "SHIP"))
-				{
-					Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
-					sprintf(speedx, "%lf", tmp->vx);
-					sprintf(speedy, "%lf", tmp->vy);
-					sprintf(life, "%d", tmp->life);
-					TextOut(hDC, 820, 20, "X: ", 3);
-					TextOut(hDC, 820, 35, "Y: ", 3);
-					TextOut(hDC, 820, 50, "Life:", 5);
-					TextOut(hDC, 850, 20, speedx, lstrlen(speedx));
-					TextOut(hDC, 850, 35, speedy, lstrlen(speedy));
-					TextOut(hDC, 850, 50, life, lstrlen(life));
-				}
-				else
-				{
-					int size = log10((int)tmp->mass);
-					Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
-					CreateSolidBrush(3);
-				}
-				tmp = tmp->next;
-
-
-			} while (tmp != FirstPlanet && tmp != NULL && FirstPlanet != NULL);
+			TextOut(hDC, 820, 100, "Hello Fucktard", 14);
 		}
-
-
-		if (head == NULL || head->next == NULL)
+		else
 		{
-			tmp = head;
-		}
-		if (MySemaphore != NULL && ResetSemaphore == FALSE)
-		{
-			ReleaseSemaphore(MySemaphore, 1, &count);
-			ResetSemaphore = TRUE;
-		}
-		else if (MySemaphore == NULL && ResetSemaphore == TRUE)
-		{
-			ResetSemaphore = FALSE;
-		}
-		
+			Rectangle(hDC, 0, 0, 800, 600);
+			Rectangle(hDC, 810, 0, 940, 70);
+			TextOut(hDC, 820, 5, "Ship Status", 11);
 
-		ReleaseMutex(databaseMutex);
-		windowRefreshTimer(hWnd, UPDATE_FREQ);
+			WaitForSingleObject(databaseMutex, INFINITE);
+			FirstPlanet = head;
+			tmp = FirstPlanet;
+
+			if (FirstPlanet != NULL && tmp != NULL)
+			{
+
+				do {
+
+					posX = (int)tmp->sx;
+					posY = (int)tmp->sy;
+
+					if (!strcmp(tmp->name, "SHIP"))
+					{
+						Rectangle(hDC, posX - 8, posY - 8, posX + 8, posY + 8);
+						sprintf(speedx, "%lf", tmp->vx);
+						sprintf(speedy, "%lf", tmp->vy);
+						sprintf(life, "%d", tmp->life);
+						TextOut(hDC, 820, 20, "X: ", 3);
+						TextOut(hDC, 820, 35, "Y: ", 3);
+						TextOut(hDC, 820, 50, "Life:", 5);
+						TextOut(hDC, 850, 20, speedx, lstrlen(speedx));
+						TextOut(hDC, 850, 35, speedy, lstrlen(speedy));
+						TextOut(hDC, 850, 50, life, lstrlen(life));
+					}
+					else
+					{
+						int size = log10((int)tmp->mass);
+						Ellipse(hDC, posX - size, posY - size, posX + size, posY + size);
+						CreateSolidBrush(3);
+					}
+					tmp = tmp->next;
+
+
+				} while (tmp != FirstPlanet && tmp != NULL && FirstPlanet != NULL);
+			}
+
+
+			if (head == NULL || head->next == NULL)
+			{
+				tmp = head;
+			}
+			if (MySemaphore != NULL && ResetSemaphore == FALSE)
+			{
+				ReleaseSemaphore(MySemaphore, 1, &count);
+				ResetSemaphore = TRUE;
+			}
+			else if (MySemaphore == NULL && ResetSemaphore == TRUE)
+			{
+				ResetSemaphore = FALSE;
+			}
+
+
+			ReleaseMutex(databaseMutex);
+			windowRefreshTimer(hWnd, UPDATE_FREQ);
+		}
 		break;
-
+		
 	case WM_PAINT:
 
 		context = BeginPaint(hWnd, &ps);
