@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <string.h>
+#include <time.h>
 #include "wrapper.h"
 
 void mailThread(char* pid)
@@ -92,7 +93,7 @@ void main(void) {
 		i = 0;
 		do
 		{
-			printf("	Enter what you want to do:\n0: create a planet.\n1: Use the standard setup.\n3: Create a ship.\n", pt->name);		//life expecancy of the new planet
+			printf("	Enter what you want to do:\n1: create a planet.\n2: Use the standard setup.\n3: Create a ship.\n4: Game mode.\n5: Chaos.\n", pt->name);		//life expecancy of the new planet
 			input(MESSAGE);
 			sort_number(MESSAGE);
 			choice = atoi(MESSAGE);
@@ -220,6 +221,133 @@ void main(void) {
 				printf("data sent to server (bytes = %d)\n", bytesWritten);
 			else
 				printf("failed sending data to server\n");
+
+		}
+		else if (choice == 3)
+		{
+			strcpy(pt->name, "SHIP");
+			pt->mass = 1000;
+			pt->next = NULL;
+			pt->sx = 400;
+			pt->sy = 300;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 300000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+		}
+		else if (choice == 4)
+		{
+			strcpy(pt->name, "SHIP");
+			pt->mass = 100000000;
+			pt->next = NULL;
+			pt->sx = 400;
+			pt->sy = 300;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+			Sleep(20);
+
+			strcpy(pt->name, "Planet1");
+			pt->mass = 1000;
+			pt->next = NULL;
+			pt->sx = 100;
+			pt->sy = 100;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+			Sleep(20);
+
+			strcpy(pt->name, "Planet2");
+			pt->mass = 1000;
+			pt->next = NULL;
+			pt->sx = 700;
+			pt->sy = 100;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+			Sleep(20);
+
+			strcpy(pt->name, "Planet3");
+			pt->mass = 1000;
+			pt->next = NULL;
+			pt->sx = 100;
+			pt->sy = 500;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+			Sleep(20);
+
+			strcpy(pt->name, "Planet4");
+			pt->mass = 1000;
+			pt->next = NULL;
+			pt->sx = 700;
+			pt->sy = 500;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");
+		}
+		else if (choice == 5)
+		{
+			srand(time(NULL));
+			for (int n = 0; n < 50; n++)
+			{
+				strcpy(pt->name, "Planet");
+				pt->mass = 100;
+				pt->next = NULL;
+				pt->sx = rand()%800;
+				pt->sy = rand()%600;
+				pt->vx = 0;
+				pt->vy = 0;
+				pt->life = 30000;
+				bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+				if (bytesWritten != -1)
+					printf("data sent to server (bytes = %d)\n", bytesWritten);
+				else
+					printf("failed sending data to server\n");
+				Sleep(20);
+			}
+			/*strcpy(pt->name, "SHIP");
+			pt->mass = 100000000;
+			pt->next = NULL;
+			pt->sx = 400;
+			pt->sy = 300;
+			pt->vx = 0;
+			pt->vy = 0;
+			pt->life = 30000;
+			bytesWritten = mailslotWrite(mailSlot, pt, sizeof(planet_type));		//writing the new planet to the server
+			if (bytesWritten != -1)
+				printf("data sent to server (bytes = %d)\n", bytesWritten);
+			else
+				printf("failed sending data to server\n");*/
 
 		}
 	}
