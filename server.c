@@ -44,7 +44,7 @@ LRESULT WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI mailThread(LPVOID);
 void createPlanet(planet_type* pt);
 void Planet(planet_type* pt);
-
+CRITICAL_SECTION CS;
 HANDLE MySemaphore = NULL;
 planet_type* head = NULL;
 ThreadCount = 0;
@@ -73,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	HWND hWnd;
 	DWORD threadID;
 	MSG msg;
-	
+	InitializeCriticalSection(&CS);
 	/* Create the window, 3 last parameters important */
 	/* The tile of the window, the callback function */
 	/* and the backgrond color */
@@ -238,6 +238,7 @@ void Planet(planet_type* pt)
 		{
 
 			ThreadCount--;
+			EnterCriticalSection(&CS);
 			do
 			{
 				Sleep(3);
@@ -270,6 +271,7 @@ void Planet(planet_type* pt)
 				pt = NULL;
 				CloseHandle(MySemaphore);
 				MySemaphore = NULL;
+				LeaveCriticalSection(&CS);
 				return;
 			}
 			else if (pt->next != NULL) //if there is more than one planet in the database
@@ -307,6 +309,7 @@ void Planet(planet_type* pt)
 				//LeaveCriticalSection(&CS);
 				CloseHandle(MySemaphore);
 				MySemaphore = NULL;
+				LeaveCriticalSection(&CS);
 				return;
 			}
 
