@@ -239,15 +239,6 @@ void Planet(planet_type* pt)
 
 			ThreadCount--;
 			EnterCriticalSection(&CS);
-			do
-			{
-				Sleep(3);
-			} while (MySemaphore != NULL);
-			MySemaphore = CreateSemaphore(
-				NULL,           // default security attributes
-				1,  // initial count
-				(ThreadCount+2),  // maximum count
-				NULL);          // unnamed semaphore
 
 			do
 			{
@@ -258,6 +249,15 @@ void Planet(planet_type* pt)
 			{
 
 				head = NULL;
+				do
+				{
+					Sleep(3);
+				} while (MySemaphore != NULL);
+				MySemaphore = CreateSemaphore(
+					NULL,           // default security attributes
+					1,  // initial count
+					(ThreadCount + 2),  // maximum count
+					NULL);          // unnamed semaphore
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
 				
@@ -296,7 +296,15 @@ void Planet(planet_type* pt)
 					}
 				}
 				
-				
+				do
+				{
+					Sleep(3);
+				} while (MySemaphore != NULL);
+				MySemaphore = CreateSemaphore(
+					NULL,           // default security attributes
+					1,  // initial count
+					(ThreadCount + 2),  // maximum count
+					NULL);          // unnamed semaphore
 				mailslotWrite(mailbox, message, strlen(message) + 1);
 				mailslotClose(mailbox);
 				do
